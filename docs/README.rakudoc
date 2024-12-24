@@ -1,0 +1,25 @@
+=begin rakudoc
+=TITLE Build a website from current directory
+=SUBTITLE The Build component for the Elucid8 framework
+=for AUTHOR :hidden
+Richard Hainsworth, aka finanalyst
+=for VERSION :hidden
+v0.1.0
+=begin SYNOPSIS
+The component is part of the C<Elucid8> distribution and is installed
+once installed as
+=for code :lang<text>
+    zef install Elucid8
+
+The utility C<elucid8-build> will generate a static website according
+to the L<configuration|#Configuration> in the Current Working Directory (CWD).
+=end SYNOPSIS
+=head Assumptions
+
+=head Configuration
+
+A directory called C<config> is required in the CWD.
+
+=place semantic:AUTHOR :caption<Credits>
+=place semantic:VERSION
+=end rakudoc
