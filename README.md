@@ -28,10 +28,24 @@
 <div id="Assumptions"></div>
 
 ## Assumptions
+<span class="para" id="e7ea0bd"></span>The Build component of Elucid8 assumes the following structure. 
+
+
+```
+sandpit                      # a test bed for a web site built with elucid8
+    - config/                 # contains the website configuration
+    - L10N/                  # contains the dictionaries from the canonical to derived languages
+    - sources/
+      - canonical/          # RakuDoc content in canonical language
+      - xx/                     # content in language with code xx
+      - xx-YY/               # regional content in language with code xx-YY
+```
+<span class="para" id="48e6de8"></span>All names in the structure, except for `config/`, may be modified by changing fields in the files in `config/`. 
+
 <div id="Configuration"></div>
 
 ## Configuration
-<span class="para" id="d7dd389"></span>A directory called `config` is required in the CWD. 
+<span class="para" id="1079711"></span>A directory called `config/` is required in the CWD. 
 
 <div id="Credits"></div>
 
@@ -52,7 +66,7 @@ Richard Hainsworth, aka finanalyst
 
 ----
 
-Rendered from docs/README.rakudoc/README at 21:10 UTC on 2024-12-24
+Rendered from docs/README.rakudoc/README at 12:42 UTC on 2024-12-25
 
-Source last modified at 21:08 UTC on 2024-12-24
+Source last modified at 12:38 UTC on 2024-12-25
 
