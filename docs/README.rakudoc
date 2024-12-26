@@ -1,14 +1,16 @@
 =begin rakudoc
 =TITLE Build a website from current directory
 =SUBTITLE The Build component for the Elucid8 framework
+=config code :lang<text>
 =for AUTHOR :hidden
 Richard Hainsworth, aka finanalyst
 =for VERSION :hidden
 v0.1.0
+=config code :lang<text>
 =begin SYNOPSIS
 The component is part of the C<Elucid8> distribution and is installed
 once installed as
-=for code :lang<text>
+=for code
     zef install Elucid8
 
 The utility C<elucid8-build> will generate a static website according
@@ -18,20 +20,113 @@ to the L<configuration|#Configuration> in the Current Working Directory (CWD).
 
 The Build component of Elucid8 assumes the following structure.
 
-=for code :lang<text>
+=for code
 sandpit                      # a test bed for a web site built with elucid8
     - config/                 # contains the website configuration
     - L10N/                  # contains the dictionaries from the canonical to derived languages
-    - sources/
+    - sources/               # Only directories containing language sources permitted here
       - canonical/          # RakuDoc content in canonical language
-      - xx/                     # content in language with code xx
+      - xx/                  # content in language with code xx
       - xx-YY/               # regional content in language with code xx-YY
 
 All names in the structure, except for C<config/>, may be modified by changing fields in
 the files in C<config/>.
+
+The name of the R<config/> directory may be changed by setting the C<--config>
+option to C<elucid8-build>. For example, if the canonical language is Mandarin, and
+the word used to mean 'config' is C<布局>, then
+
+    elucid8-build --config=<布局>
+
+will set the configuration directory I<布局>. This will be called the I<localised config>.
+
 =head Configuration
 
-A directory called C<config/> is required in the CWD.
+A directory called C<config/> (or its preconfigured alternative) is required in the CWD.
+
+The R<config/> directory follows the conventions set out in the distribution C<raku-config>.
+
+If a I<localised config> has been specified, then one key must be called
+by the same name, and must contain
+a hash in which the key is a key of the default (English) I<config> and the
+value is a string that is a key in the localised config.
+
+If some of the keys in the default are missing in the localised config, then the value
+of the default config is used.
+
+This allows for some or all of the configuration to be specified in a
+canonical language other than English.
+
+The full set of L<configuration keys|#All configuration keys> and their defaults
+are in English.
+
+For example, suppose we have a web-site where Welsh is the canonical language
+and the I<config> file is partially in Welsh. Suppose further that the build command is:
+=for code
+    elucid8-build --config=ffurfwedd
+
+Then in this case, the directory C<ffurfwedd/> should contain a file,
+typically named I<01-ffurfwedd.raku>, with the content:
+=for code
+    ffurfwedd => %(
+        sources => 'ffynhonnell',
+        canonical => 'gofyddebol',
+        L10N => 'lleoliad',
+    )
+
+Then the web-site would need to be structured as follows
+=begin code
+<web-site directory>/
+|- config/
+|- lleoliad/
+|- ffurfwedd/
+    |- 01-ffurfwedd.raku
+|- ffynhonnell/
+    |- gofyddebol/
+    |- en-GB/
+=end code
+The B<config> directory and its contents are needed because the localised
+config is incomplete.
+
+If B<all> the mandatory config keys are defined
+in the I<localised config>, and all the keys have values, then the default
+can be removed.
+
+=head2 All configuration keys
+
+The following is a list of all the mandatory config keys and their default values.
+=begin table :!toc :caption('')
+=row :header
+    =cell Key name
+    =cell Value
+    =cell Description
+=row
+    =cell L10N
+    =cell L10N
+    =cell the directory containing Translation information
+=row
+    =cell sources
+    =cell sources
+    =cell content as RakuDoc sources, sub-directories are for content by language
+=row
+    =cell canonical
+    =cell canonical
+    =cell sub-directory of sources containing content, only sub-dir
+    that needs defining in the config file
+=row
+    =cell extensions
+    =cell <rakudoc rakumod>
+    =cell an array of file extensions containing source
+=row
+    =cell quiet
+    =cell False
+    =cell output runtime progress information
+=row
+    =cell with-only
+    =cell ()
+    =cell a list of strings or regexes, matching filenames
+          only will be rendered (useful for debugging)
+=end table
 
 =place semantic:AUTHOR :caption<Credits>
 =place semantic:VERSION
