@@ -1,0 +1,39 @@
+{
+  "name": "Elucid8::Build",
+  "description": "Renders RakuDoc sources in multiple languages to web site",
+  "version": "0.1.0",
+  "authors": [
+    "Richard Hainsworth"
+  ],
+  "auth": "zef:finanalyst",
+  "depends": [
+    "RakuAST::RakuDoc::Render",
+    "Raku::Config"
+  ],
+  "test-depends": [
+    "Test",
+    "Test::META"
+  ],
+  "provides": {
+
+  },
+  "resources": [
+
+  ],
+  "support": {
+    "bugtracker": "https://github.com/finanalyst/rakuast-rakudoc-render/issues",
+    "email": "richard@hainsworth.wales",
+    "source": "https://github.com/finanalyst/rakuast-rakudoc-render.git"
+  },
+  "license": "Artistic-2.0",
+  "source-url": "git://github.com/elucid8-org/build.git",
+  "bin": [
+    "bin/elucid8-build"
+  ],
+  "raku": "6.d",
+  "docs": [
+    "README.md",
+    "docs/README.rakudoc"
+  ],
+  "source-type": "git"
+}
