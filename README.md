@@ -113,16 +113,16 @@ elucid8-build --config=<布局>
  | L10N | L10N | the directory containing Translation information |
  | sources | sources | content as RakuDoc sources, sub-directories are for content by language |
  | canonical | canonical | sub-directory of sources containing content, only sub-dir that needs defining in the config file |
- | extensions | <rakudoc rakumod> | an array of file extensions containing source |
+ | extensions | &lt;rakudoc rakumod> | an array of file extensions containing source |
  | quiet | False | output runtime progress information |
  | with-only | () | a list of strings or regexes, matching filenames only will be rendered (useful for debugging) |
  | ignore | () | list of strings or regexes, matching files will not be rendered |
  | destination | 'for-publication' | directory relative to CWD where HTML and assets are rendered |
  | landing-page | 'index' | the name of the page that is the default route for a web-site |
- | <span class="para" id="b662593"></span>The plugins needed are more easily kept in a separate file, typically `02-plugins.raku` |
- | plugins | <Bulma Hilite ListFiles SCSS> | <span class="para" id="7ed8fe0"></span>plugins attached to the Rendering engine ***packaged with rakuast-rakudoc-render*** |
- | plugins | <Graphviz FontAwesome Latex LeafletMaps> | <span class="para" id="4722e84"></span>custom blocks ***packaged with rakuast-rakudoc-render*** |
- | plugins | <UISwitcher> | <span class="para" id="335106d"></span>Adds multi-lingual UI ***packaged with Elucid8*** |
+ | &nbsp; | <span class="para" id="b662593"></span>The plugins needed are more easily kept in a separate file, typically `02-plugins.raku` | &nbsp; |
+ | plugins | &lt;Bulma Hilite ListFiles SCSS> | <span class="para" id="7ed8fe0"></span>plugins attached to the Rendering engine ***packaged with rakuast-rakudoc-render*** |
+ | plugins | plugins ,= &lt;Graphviz FontAwesome Latex LeafletMaps> | <span class="para" id="4722e84"></span>custom blocks ***packaged with rakuast-rakudoc-render*** |
+ | plugins | plugins ,= &lt;UISwitcher> | <span class="para" id="335106d"></span>Adds multi-lingual UI ***packaged with Elucid8*** |
 <div id="Credits"></div>
 
 ## Credits
@@ -142,7 +142,7 @@ Richard Hainsworth, aka finanalyst
 
 ----
 
-Rendered from docs/README.rakudoc/README at 23:58 UTC on 2024-12-27
+Rendered from docs/README.rakudoc/README at 13:18 UTC on 2024-12-28
 
-Source last modified at 23:57 UTC on 2024-12-27
+Source last modified at 13:17 UTC on 2024-12-28
 

@@ -139,7 +139,7 @@ The following is a list of all the mandatory config keys and their default value
     =cell 'index'
     =cell the name of the page that is the default route for a web-site
 =row
-    =for cell :span(0,3)
+    =for cell :column-span(3)
     The plugins needed are more easily kept in a separate file, typically C<02-plugins.raku>
 =row
     =cell plugins
@@ -147,11 +147,11 @@ The following is a list of all the mandatory config keys and their default value
     =cell plugins attached to the Rendering engine B<I<packaged with rakuast-rakudoc-render>>
 =row
     =cell plugins
-    =cell <Graphviz FontAwesome Latex LeafletMaps>
+    =cell plugins ,= <Graphviz FontAwesome Latex LeafletMaps>
     =cell custom blocks B<I<packaged with rakuast-rakudoc-render>>
 =row
     =cell plugins
-    =cell <UISwitcher>
+    =cell plugins ,= <UISwitcher>
     =cell Adds multi-lingual UI B<I<packaged with Elucid8>>
 =end table
 
