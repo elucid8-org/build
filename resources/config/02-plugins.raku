@@ -1,10 +1,9 @@
 %(
     plugins => <
-      Bulma
-      Hilite
+      Bulma Hilite
       ListFiles
-      SCSS
       Graphviz FontAwesome Latex LeafletMaps
       UISwitcher
+      SCSS
     >
 )

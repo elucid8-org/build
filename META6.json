@@ -1,24 +1,28 @@
 {
   "name": "Elucid8::Build",
   "description": "Renders RakuDoc sources in multiple languages to web site",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "authors": [
     "Richard Hainsworth"
   ],
   "auth": "zef:finanalyst",
   "depends": [
-    "RakuAST::RakuDoc::Render",
-    "Raku::Config"
+    "Rakuast::RakuDoc::Render",
+    "RakuConfig"
   ],
   "test-depends": [
     "Test",
-    "Test::META"
+    "Test::META",
+    "File::Directory::Tree"
   ],
   "provides": {
-
+    "Elucid8-Build": "lib/Elucid8-Build.rakumod",
+    "Elucid8::Plugins::HTML::UISwitcher": "lib/plugins/html/UISwitcher.rakumod"
   },
   "resources": [
-
+    "config/01-base.raku",
+    "config/02-plugins.raku",
+    "config/03-plugin-options.raku"
   ],
   "support": {
     "bugtracker": "https://github.com/finanalyst/rakuast-rakudoc-render/issues",

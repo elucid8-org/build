@@ -1,0 +1,14 @@
+use v6.d;
+use Test;
+use Test::Run :runs_ok;
+plan 1;
+
+my @args = <<$*EXECUTABLE -I. bin/elucid8-build -v>>;
+runs_ok(
+    'got version',
+    :@args,
+    :exitcode(0),
+    :out( / 'Using version'/ )
+);
+
+done-testing;

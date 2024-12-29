@@ -143,7 +143,7 @@ The following is a list of all the mandatory config keys and their default value
     The plugins needed are more easily kept in a separate file, typically C<02-plugins.raku>
 =row
     =cell plugins
-    =cell <Bulma Hilite ListFiles SCSS>
+    =cell <Bulma Hilite ListFiles>
     =cell plugins attached to the Rendering engine B<I<packaged with rakuast-rakudoc-render>>
 =row
     =cell plugins
@@ -151,8 +151,12 @@ The following is a list of all the mandatory config keys and their default value
     =cell custom blocks B<I<packaged with rakuast-rakudoc-render>>
 =row
     =cell plugins
-    =cell plugins ,= <UISwitcher>
+    =cell plugins ,= 'UISwitcher',
     =cell Adds multi-lingual UI B<I<packaged with Elucid8>>
+=row
+    =cell plugins
+    =cell plugins ,= 'SCSS',
+    =cell must be last plugin enabled, converts SCSS in other plugins to CSS B<I<packaged with rakuast-rakudoc-render>>
 =end table
 
 =place semantic:AUTHOR :caption<Credits>

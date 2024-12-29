@@ -1,0 +1,8 @@
+use v6.d;
+use Test;
+
+plan 2;
+use-ok 'Elucid8-Build';
+use-ok 'Elucid8::Plugins::HTML::UISwitcher';
+
+done-testing;

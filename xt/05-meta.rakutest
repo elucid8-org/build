@@ -1,0 +1,19 @@
+use v6.e.PREVIEW;
+use Test;
+require Test::META <&meta-ok>;
+
+plan 3;
+
+meta-ok;
+ok 'docs/README.rakudoc'.IO ~~ :e & :f , 'A README source exists';
+subtest 'Documentation files all rendered to root' => {
+    my @files = 'docs'.IO.dir( test => *.ends-with('.rakudoc') );
+    my $fn;
+    plan @files.elems * 2;
+    for @files {
+        $fn = .stem;
+        ok "$fn\.md".IO ~~ :e & :f, "$fn\.md exists";
+        cmp-ok "$fn\.md".IO.modified, '>', "docs/$fn\.rakudoc".IO.modified, "$fn\.md is up to date";
+    }
+}
+done-testing;

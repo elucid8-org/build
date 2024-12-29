@@ -1,0 +1,54 @@
+use v6.d;
+use Test;
+use File::Directory::Tree;
+use Test::Run :runs_ok;
+
+my $dir = 'test-directory';
+if $dir.IO ~~ :e & :d {
+    empty-directory $dir
+}
+else { mktree $dir }
+&chdir( $dir );
+plan 6;
+my @args = <<$*EXECUTABLE -I.. ../bin/elucid8-build>>;
+runs_ok(
+    'failure with no config and no install',
+    :@args,
+    :exitcode(1),
+    :err( / 'Has another' .+ 'been created'/ )
+);
+@args.push: '--install';
+runs_ok(
+    'pass with install',
+    :@args,
+    :exitcode(0)
+);
+subtest 'config directories made' => {
+    plan 4;
+    for <config config/sources config/L10N config/sources/canonical> {
+        ok .IO ~~ :e & :d, "$_ dir installed"
+    }
+}
+@args.pop;
+@args.push: '--config=qwert';
+runs_ok(
+    'failure with custom config and no install',
+    :@args,
+    :exitcode(1),
+    :err( / 'Cannot proceed without directory ｢qwert｣.'/ )
+);
+@args.push: '--install';
+runs_ok(
+    'pass with install',
+    :@args,
+    :exitcode(0)
+);
+subtest 'custom config directories made' => {
+    plan 4;
+    for <qwert qwert/sources qwert/L10N qwert/sources/canonical> {
+        ok .IO ~~ :e & :d, "$_ dir installed"
+    }
+}
+rmtree $dir;
+
+done-testing;

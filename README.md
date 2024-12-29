@@ -120,9 +120,10 @@ elucid8-build --config=<布局>
  | destination | 'for-publication' | directory relative to CWD where HTML and assets are rendered |
  | landing-page | 'index' | the name of the page that is the default route for a web-site |
  | &nbsp; | <span class="para" id="b662593"></span>The plugins needed are more easily kept in a separate file, typically `02-plugins.raku` | &nbsp; |
- | plugins | &lt;Bulma Hilite ListFiles SCSS> | <span class="para" id="7ed8fe0"></span>plugins attached to the Rendering engine ***packaged with rakuast-rakudoc-render*** |
+ | plugins | &lt;Bulma Hilite ListFiles> | <span class="para" id="7ed8fe0"></span>plugins attached to the Rendering engine ***packaged with rakuast-rakudoc-render*** |
  | plugins | plugins ,= &lt;Graphviz FontAwesome Latex LeafletMaps> | <span class="para" id="4722e84"></span>custom blocks ***packaged with rakuast-rakudoc-render*** |
- | plugins | plugins ,= &lt;UISwitcher> | <span class="para" id="335106d"></span>Adds multi-lingual UI ***packaged with Elucid8*** |
+ | plugins | plugins ,= 'UISwitcher', | <span class="para" id="335106d"></span>Adds multi-lingual UI ***packaged with Elucid8*** |
+ | plugins | plugins ,= 'SCSS', | <span class="para" id="5f9c227"></span>must be last plugin enabled, converts SCSS in other plugins to CSS ***packaged with rakuast-rakudoc-render*** |
 <div id="Credits"></div>
 
 ## Credits
@@ -142,7 +143,7 @@ Richard Hainsworth, aka finanalyst
 
 ----
 
-Rendered from docs/README.rakudoc/README at 13:18 UTC on 2024-12-28
+Rendered from docs/README.rakudoc/README at 13:27 UTC on 2024-12-28
 
-Source last modified at 13:17 UTC on 2024-12-28
+Source last modified at 13:27 UTC on 2024-12-28
 
