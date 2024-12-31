@@ -17,7 +17,8 @@
   ],
   "provides": {
     "Elucid8-Build": "lib/Elucid8-Build.rakumod",
-    "Elucid8::Plugins::HTML::UISwitcher": "lib/plugins/html/UISwitcher.rakumod"
+    "Elucid8::Plugin::HTML::UISwitcher": "lib/plugins/html/UISwitcher.rakumod",
+    "Elucid8::Plugin::HTML::Raku-Doc-Website": "lib/plugins/html/Raku-doc-website.rakumod"
   },
   "resources": [
     "config/01-base.raku",
@@ -25,9 +26,9 @@
     "config/03-plugin-options.raku"
   ],
   "support": {
-    "bugtracker": "https://github.com/finanalyst/rakuast-rakudoc-render/issues",
+    "bugtracker": "https://github.com/elucid8-org/build/issues",
     "email": "richard@hainsworth.wales",
-    "source": "https://github.com/finanalyst/rakuast-rakudoc-render.git"
+    "source": "https://github.com/elucid8-org/build.git"
   },
   "license": "Artistic-2.0",
   "source-url": "git://github.com/elucid8-org/build.git",

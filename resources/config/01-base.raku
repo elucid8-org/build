@@ -6,6 +6,6 @@
     :!quiet,
     :with-only(),
     :ignore(),
-    :destination<for-publication>,
+    :destination<publication>,
     :landing-page<index>,
 )

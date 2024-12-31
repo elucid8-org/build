@@ -1,9 +1,12 @@
 %(
-    plugins => <
+    rakuast-rakudoc-plugins => <
       Bulma Hilite
       ListFiles
       Graphviz FontAwesome Latex LeafletMaps
-      UISwitcher
       SCSS
-    >
+    >,
+    plugins => <
+        UISwitcher
+        Raku-Doc-Website
+    >,
 )

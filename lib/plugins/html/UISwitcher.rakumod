@@ -4,7 +4,7 @@ use RakuDoc::Render;
 
 unit class Elucid8::Plugin::HTML::UISwitcher;
 has %.config =
-    :name-space<uiswitcher>,
+    :name-space<UISwitcher>,
 	:version<0.1.0>,
 	:license<Artistic-2.0>,
 	:credit<finanalyst>,
@@ -16,8 +16,8 @@ method enable( RakuDoc::Processor:D $rdp ) {
     $rdp.add-data( %!config<name-space>, %!config );
 }
 method js-text {
-
+    '// not yet there '
 }
 method templates {
-
+    %( installed => -> %, $ { 'installed UISwitcher' }, )
 }
