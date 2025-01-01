@@ -40,6 +40,12 @@ the word used to mean 'config' is C<布局>, then
 
 will set the configuration directory I<布局>. This will be called the I<localised config>.
 
+=head Plugins
+
+The following HTML plugins are available:
+=numitem L<UISwitcher|UISwitcher.*>
+=numitem Raku-doc-website (no separate documentation)
+
 =head Configuration
 
 A directory called C<config/> (or its preconfigured alternative) is required in the CWD.

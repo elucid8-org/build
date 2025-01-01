@@ -1,5 +1,6 @@
 use v6.d;
 use RakuDoc::Render;
+use RakuDoc::PromiseStrings;
 
 unit class Elucid8::Plugin::HTML::Raku-Doc-Website;
 has %.config =
@@ -8,14 +9,18 @@ has %.config =
 	:license<Artistic-2.0>,
 	:credit<finanalyst>,
 	:authors<finanalyst>,
-    :js([self.js-text,3],),
+    ui-tokens => %(
+        :TOC<Table of Contents>,
+        :NoTOC<No Table of contents for this page>,
+        :ChangeTheme<Change Theme>,
+        :Index<Index>,
+        :NoIndex<No Index for this page>,
+        :Time( 'eval' ~ q|{ sprintf( "Rendered at %02d:%02d UTC on %s", .hour, .minute, .yyyy-mm-dd) with now.DateTime }| ),
+    )
 ;
 method enable( RakuDoc::Processor:D $rdp ) {
-    $rdp.add-templates( $.templates, :source<UISwitcher plugin> );
+    $rdp.add-templates( $.templates, :source<Raku-doc-website plugin> );
     $rdp.add-data( %!config<name-space>, %!config );
-}
-method js-text {
-    '// in development'
 }
 method templates {
     %(#| head-block, what goes in the head tab
@@ -57,7 +62,6 @@ method templates {
                         <img class="is-rounded" src="https://avatars.githubusercontent.com/u/58170775">
                         </a>
                     </figure>
-            <span style="color:red;font-weight:900;">UIS</span>
                     <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="pageNavigation">
                       <span aria-hidden="true"></span>
                       <span aria-hidden="true"></span>
@@ -73,8 +77,9 @@ method templates {
                         </label>
                     </div>
                     <div class="navbar-end">
+                        { $tmpl('ui-switch-button', %( %prm, :classes('navbar-item has-dropdown is-hoverable') )) }
                         <div class="navbar-item">
-                            <button id="changeTheme" class="button">Change theme</button>
+                            <button id="changeTheme" class="button"><span class="Elucid8-ui" data-UIToken="ChangeTheme">ChangeTheme</span></button>
                         </div>
                     </div>
                     <nav class="panel is-hidden-tablet" id="mobile-nav">
@@ -87,25 +92,86 @@ method templates {
                         </p>
                       </div>
                       <p class="panel-tabs">
-                        <a id="mtoc-tab">Table of Contents</a>
-                        <a id="mindex-tab">Index</a>
+                        <a id="mtoc-tab"><span class="Elucid8-ui" data-UIToken="TOC">TOC</span></a>
+                        <a id="mindex-tab"><span class="Elucid8-ui" data-UIToken="Index">Index</span></a>
                       </p>
                         <aside id="mtoc-menu" class="panel-block">
                         { %prm<rendered-toc>
                             ?? %prm<rendered-toc>
-                            !! '<p>No Table of contents for this page</p>'
+                            !! '<p><span class="Elucid8-ui" data-UIToken="NoTOC">NoTOC</span></p>'
                         }
                         </aside>
                         <aside id="mindex-menu" class="panel-block is-hidden">
                         { %prm<rendered-index>
                             ?? %prm<rendered-index>
-                            !! '<p>No Index for this page</p>'
+                            !! '<p><span class="Elucid8-ui" data-UIToken="NoIndex">NoIndex</span></p>'
                         }
                         </aside>
                     </nav>
                 </div>
             </nav>
             BLOCK
+        },
+        page-navigation => -> %prm, $tmpl {
+            qq:to/SIDEBAR/;
+            <nav class="panel is-hidden-mobile" id="page-nav">
+              <div class="panel-block">
+                <p class="control has-icons-left">
+                  <input class="input" type="text" id="page-nav-search"/>
+                  <span class="icon is-left">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                  </span>
+                </p>
+              </div>
+              <p class="panel-tabs">
+                <a id="toc-tab"><span class="Elucid8-ui" data-UIToken="TOC">TOC</span></a>
+                <a id="index-tab"><span class="Elucid8-ui" data-UIToken="Index">Index</span></a>
+              </p>
+                <aside id="toc-menu" class="panel-block">
+                { %prm<rendered-toc>
+                    ?? %prm<rendered-toc>
+                    !! '<p><span class="Elucid8-ui" data-UIToken="NoTOC">NoTOC</span></p>'
+                }
+                </aside>
+                <aside id="index-menu" class="panel-block is-hidden">
+                { %prm<rendered-index>
+                    ?? %prm<rendered-index>
+                    !! '<p><span class="Elucid8-ui" data-UIToken="NoIndex">NoIndex</span></p>'
+                }
+                </aside>
+            </nav>
+            SIDEBAR
+        },
+        #| special template to render the index data structure
+        index => -> %prm, $tmpl {
+            my @inds = %prm<index-list>.grep({ .isa(Str) || .isa(PStr) });
+            if @inds.elems {
+                PStr.new: '<div class="index">' ~ "\n" ~
+                ([~] @inds ) ~
+                "</div>\n"
+            }
+            else { '<span class="Elucid8-ui" data-UIToken="NoIndex">NoIndex</span>' }
+        },
+        #| the last section of body
+        footer => -> %prm, $tmpl {
+            qq:to/FOOTER/;
+            <footer class="footer main-footer">
+                <div class="container px-4">
+                    <nav class="level">
+                        <div class="level-item">
+                            Rendered from <span class="footer-field">{%prm<source-data><path>}/{%prm<source-data><name>}
+                        </div>
+                        <div class="level-item">
+                            <span class="Elucid8-ui" data-UIToken="Time">Time</span>
+                        </div>
+                        <div class="level-item">
+                            Source last modified {(sprintf( "at %02d:%02d UTC on %s", .hour, .minute, .yyyy-mm-dd) with %prm<source-data><modified>.DateTime)}
+                        </div>
+                    </nav>
+                </div>
+                { qq[<div class="section"><div class="container px-4 warnings">{%prm<warnings>}</div></div>] if %prm<warnings> }
+            </footer>
+            FOOTER
         },
     )
 }

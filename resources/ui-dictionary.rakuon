@@ -1,0 +1,42 @@
+{
+	｢en｣ => {
+		｢langName｣    => "English",
+		｢UI_Switch｣   => "Switch UI",
+		｢Time｣        => "eval\{ sprintf( \"Rendered at \%02d:\%02d UTC on \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+		｢Index｣       => "Index",
+		｢NoIndex｣     => "No Index for this page",
+		｢TOC｣         => "Table of Contents",
+		｢NoTOC｣       => "No Table of contents for this page",
+		｢ChangeTheme｣ => "Change Theme"
+	},
+	｢fr｣ => {
+	    ｢langName｣    => "Français",
+		｢UI_Switch｣   => "Changer d'IU",
+        ｢Time｣        => "eval\{ sprintf( \"Rendu à\%02d:\%02d UTC à \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+        ｢Index｣       => "Index",
+        ｢NoIndex｣     => "Aucun index pour cette page",
+        ｢TOC｣         => "Table des matières",
+        ｢NoTOC｣       => "Aucune table des matières pour cette page",
+        ｢ChangeTheme｣ => "Changer de thème"
+    },
+    ｢ua｣ => {
+	    ｢langName｣    => "Українська",
+        ｢UI_Switch｣   => "Інтерфейс користувача",
+        ｢Time｣        => "eval\{ sprintf( \"Виведено о \%02d:\%02d UTC на \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+        ｢Index｣       => "Індекс",
+        ｢NoIndex｣     => "Немає індексу для цієї сторінки",
+        ｢TOC｣         => "Зміст",
+        ｢NoTOC｣       => "Немає змісту цієї сторінки",
+        ｢ChangeTheme｣ => "Змінити тему"
+    },
+	｢nl｣ => {
+	    ｢langName｣    => "Nederlands",
+		｢UI_Switch｣   => "Switch UI",
+		｢Time｣        => "eval\{ sprintf( \"Gerenderd at \%02d:\%02d UTC on \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+		｢Index｣       => "Index",
+		｢NoIndex｣     => "Geen index voor deze pagina",
+		｢TOC｣         => "Inhoudsopgave",
+		｢NoTOC｣       => "Geen inhoudsopgave voor deze pagina",
+		｢ChangeTheme｣ => "Thema wijzigen"
+	},
+}

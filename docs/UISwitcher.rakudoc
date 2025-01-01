@@ -1,0 +1,115 @@
+=begin rakudoc
+=TITLE Plugin to switch UI language
+=SUBTITLE How navigation language switching works
+=config code :lang<text>
+=for AUTHOR :hidden
+Richard Hainsworth, aka finanalyst
+=for VERSION :hidden
+v0.1.0
+=head Introduction
+
+This is a plugin for the Elucid8 framework and is intended to be called from the
+Elucid8-build component.
+
+All Elucid8 plugins that provide templates which have user facing text should
+replace any such user-facing that text with a C<ui-token>. These tokens are replaced
+in the browser by a JS script from a dictionary that is itself generated at render
+time from the C<ui-tokens>.
+
+At install time, the dictionary is created from the C<ui-tokens> in each plugin, then
+stored in the C<L10N> directory.
+
+The dictionary is then added to by translating the keys in the canonical language.
+
+Since the UI language is independent of the content languages, the canonical language
+only has meaning when defining User Interface template. By default the canonical
+lanugage for the C<ui-tokens> is C<en>. It is important to add the key C<langName>.
+
+A long example is:
+
+=for code :lang<Raku>
+    {
+        ｢en｣ => {
+            ｢langName｣    => "English",
+            ｢UI_Switch｣   => "Switch UI",
+            ｢Time｣        => "eval\{ sprintf( \"Rendered at \%02d:\%02d UTC on \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+            ｢Index｣       => "Index",
+            ｢NoIndex｣     => "No Index for this page",
+            ｢TOC｣         => "Table of Contents",
+            ｢NoTOC｣       => "No Table of contents for this page",
+            ｢ChangeTheme｣ => "Change Theme"
+        },
+        ｢fr｣ => {
+            ｢langName｣    => "Français",
+            ｢UI_Switch｣   => "Changer d'IU",
+            ｢Time｣        => "eval\{ sprintf( \"Rendu à\%02d:\%02d UTC à \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+            ｢Index｣       => "Index",
+            ｢NoIndex｣     => "Aucun index pour cette page",
+            ｢TOC｣         => "Table des matières",
+            ｢NoTOC｣       => "Aucune table des matières pour cette page",
+            ｢ChangeTheme｣ => "Changer de thème"
+        },
+        ｢ua｣ => {
+            ｢langName｣    => "Українська",
+            ｢UI_Switch｣   => "Інтерфейс користувача",
+            ｢Time｣        => "eval\{ sprintf( \"Виведено о \%02d:\%02d UTC на \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+            ｢Index｣       => "Індекс",
+            ｢NoIndex｣     => "Немає індексу для цієї сторінки",
+            ｢TOC｣         => "Зміст",
+            ｢NoTOC｣       => "Немає змісту цієї сторінки",
+            ｢ChangeTheme｣ => "Змінити тему"
+        },
+        ｢nl｣ => {
+            ｢langName｣    => "Nederlands",
+            ｢UI_Switch｣   => "Switch UI",
+            ｢Time｣        => "eval\{ sprintf( \"Gerenderd at \%02d:\%02d UTC on \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+            ｢Index｣       => "Index",
+            ｢NoIndex｣     => "Geen index voor deze pagina",
+            ｢TOC｣         => "Inhoudsopgave",
+            ｢NoTOC｣       => "Geen inhoudsopgave voor deze pagina",
+            ｢ChangeTheme｣ => "Thema wijzigen"
+        },
+    }
+
+A C<ui-token> is a unique string of unicode chars.
+In a template the place where a ui-token is to be placed is shown as
+a C<span> tag with class C<Elucid8-ui>, an attribute C<data-UIToken> and the content of the tag is the
+ui-token, eg.,
+=for code :lang<HTML>
+    <span class="Elucid8-ui" data-UIToken="Some_UIToken">Some_UIToken</span>
+
+This gives the span a default content.
+
+A plugin with templates containing I<ui-tokens> must provide a field in the
+C<config> section of the form:
+=for code :allow<R>
+    ui-tokens: %(
+        token-1 => R<expansion in canonical language>,
+        token-2 => R<expansion2>
+        )
+
+An expansion may be
+=item A string
+=item A Raku closure, which is evaluated when the file is rendered. It may contain
+variables that known at run time. The primary use is for time and date information.
+
+After all the I<Elucid8> plugins have been enabled, and hence all the templates with
+UI content are attached to the RakuDoc-processor (rdp) object, the closure in
+the UISwitcher's dataspace key C<gather-ui-tokens> is run with the rdp and the config
+as the parameters.
+
+A dictionary is created which is placed in a JS file that is added to each website page.
+The JS file is responsible for setting the UI content, getting a signal to change the content,
+and changing content.
+
+The dictionary is created in the following steps:
+=numitem the C<ui-tokens> and their canonical values are collected from each plugin
+=numitem The R<L10N> directory is checked for the existence of a file called B<dictionary.rakuon>.
+=numitem2 If the dictionary file exists, then the dictionary object is created from the file
+=numitem2 If the dictionary file does not exist, then a blank dictionary object.
+=numitem All the collected keys are compared with the keys of the dictionary object
+=numitem If there are new keys, they are added to the dictionary object.
+=numitem If the dictionary object has been changed by the addition of new keys, then a new
+dictionary file is written.
+
+=end rakudoc

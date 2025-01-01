@@ -7,10 +7,10 @@ use File::Directory::Tree;
 proto sub MAIN(|) is export {*}
 
 multi sub MAIN(
-    :$config = 'config',     #| local config file
-    Bool :$install = False,  #| install a config directory (if absent) from default values
+    :$config = 'config',      #| local config file
+    Bool :$install = False,   #| install a config directory (if absent) from default values
     Bool :force(:$f) = False, #| force complete rendering, otherwise only modified
-    Str :$debug = 'None',      #| RakuAST-RakuDoc-Render debug list
+    Str :$debug = 'None',     #| RakuAST-RakuDoc-Render debug list
 ) {
     my %config;
     if $config.IO ~~ :e & :d {
@@ -28,7 +28,7 @@ multi sub MAIN(
     my $src = %config<sources>;
     my $to = %config<destination>;
     my $rdp = RakuDoc::To::HTML.new.rdp;
-    my @reserved = <uitokens css css-link js js-link>;
+    my @reserved = <ui-tokens css css-link js js-link>;
     $rdp.debug( $debug );
     $rdp.add-plugins( 'RakuDoc::Plugin::HTML::' «~« %config<rakuast-rakudoc-plugins>.list );
     $rdp.add-plugins( 'Elucid8::Plugin::HTML::' «~« %config<plugins>.list );
@@ -44,12 +44,15 @@ multi sub MAIN(
         $rdp.templates.data<SCSS><run-sass>.( $rdp )
     }
     else { $rdp.gather-flatten( 'css', :@reserved) }
+    $rdp.templates.data<UISwitcher><gather-ui-tokens>.( $rdp, %config );
     $rdp.gather-flatten(<css-link js-link js>, :@reserved );
     my %sources;
     my @todo = $src.IO;
     while @todo {
         for @todo.pop.dir -> $path {
-            if $path.d { @todo.push: $path }
+            if $path.d {
+                @todo.push: $path;
+            }
             else {
                 %sources{$path.relative($src).IO.extension('')} = %(
                     :$path,
@@ -71,14 +74,13 @@ sub render-files (%sources, $to, $f, $rdp, %config) {
     my %file-data;
     %file-data = EVALFILE 'file-data.rakuon' if 'file-data.rakuon'.IO ~~ :e & :f;
     my $changes = False;
-    for %sources.kv -> $short, %info { say $short;
-        next if $short ~~ / { %config<landing-page> } $ /;
+    for %sources.kv -> $short, %info {
+        next if $short ~~ / $( %config<landing-page> ) $ /;
         my $processed;
         my $rendered-io = "$to/$short\.html".IO;
         my $path := %info<path>;
-        if $f or %file-data{$short}:!exists
-                or $rendered-io !~~ :e & :f
-                or %info<modified> > $rendered-io.modified
+        if $f or (%file-data{$short}:!exists)
+                or ($rendered-io !~~ :e & :f or %info<modified>.Int > $rendered-io.modified)
         {
             say "rendering { %info<path> } to $rendered-io";
             $changes = True;

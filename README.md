@@ -9,6 +9,7 @@
 
 <a href="#SYNOPSIS">SYNOPSIS</a>   
 <a href="#Assumptions">Assumptions</a>   
+<a href="#Plugins">Plugins</a>   
 <a href="#Configuration">Configuration</a>   
 &nbsp;&nbsp;- <a href="#All_configuration_keys">All configuration keys</a>   
 <a href="#Credits">Credits</a>   
@@ -50,6 +51,17 @@ sandpit                      # a test bed for a web site built with elucid8
 elucid8-build --config=<布局>
 ```
 <span class="para" id="5d77cc3"></span>will set the configuration directory *布局*. This will be called the *localised config*. 
+
+<div id="Plugins"></div>
+
+## Plugins
+<span class="para" id="016ad6d"></span>The following HTML plugins are available: 
+
+
+
+1. <span class="para" id="8602167"></span>[UISwitcher](UISwitcher.md)  
+
+2. Raku-doc-website (no separate documentation)  
 
 <div id="Configuration"></div>
 
@@ -143,7 +155,7 @@ Richard Hainsworth, aka finanalyst
 
 ----
 
-Rendered from docs/README.rakudoc/README at 13:27 UTC on 2024-12-28
+Rendered from docs/README.rakudoc/README at 19:47 UTC on 2025-01-01
 
-Source last modified at 13:27 UTC on 2024-12-28
+Source last modified at 19:46 UTC on 2025-01-01
 
