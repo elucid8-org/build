@@ -1,4 +1,3 @@
-use v6.d;
 use RakuDoc::Render;
 use RakuDoc::To::HTML;
 use RakuConfig;
@@ -75,39 +74,39 @@ sub render-files (%sources, $to, $f, $rdp, %config) {
     %file-data = EVALFILE 'file-data.rakuon' if 'file-data.rakuon'.IO ~~ :e & :f;
     my $changes = False;
     for %sources.kv -> $short, %info {
-        next if $short ~~ / $( %config<landing-page> ) $ /;
-        my $processed;
+    say "@ $?LINE short $short test ",so $short.IO.stem ~~ %config<last>.list.any ;
+        next if $short.IO.stem ~~ %config<last>.list.any;
         my $rendered-io = "$to/$short\.html".IO;
-        my $path := %info<path>;
-        if $f or (%file-data{$short}:!exists)
-                or ($rendered-io !~~ :e & :f or %info<modified>.Int > $rendered-io.modified)
-        {
-            say "rendering { %info<path> } to $rendered-io";
-            $changes = True;
-            $processed = $rdp.render($path.slurp.AST, :source-data(%(
-                name => $short,
-                modified => %info<modified>,
-                :$path,
-            )), :pre-finalised);
-            with $short.IO.dirname { mktree "$to/$_" unless "$to/$_".IO ~~ :e & :d }
-            $rendered-io.spurt($rdp.finalise);
-            %file-data{$short} = %(
-                title => $processed.title,
-                subtitle => $processed.subtitle ?? $processed.subtitle !! 'No description',
-                config => $processed.source-data<rakudoc-config>,
-            );
-        }
+        my $do-file = $f
+            or (%file-data{$short}:!exists)
+            or ($rendered-io !~~ :e & :f or %info<modified>.Int > $rendered-io.modified);
+        render-file($rdp, $to, $short, %info, $rendered-io, %file-data) if $do-file;
+        $changes |= $do-file;
     }
-    exit say('Nothing changed') unless $changes;
-#    my %listf := $rdp.templates.data<listfiles>;
-#    %listf<meta> = %file-data;
-#    my $ind = "index.rakudoc".IO;
-#    "$to/index.html".IO.spurt: $rdp.render($ind.slurp.AST, :source-data(%(
-#        name => 'index',
-#        modified => $ind.modified,
-#        path => $ind.dirname,
-#    )));
+    # No changes to content files means the site-
+    my %listf := $rdp.templates.data<listfiles>;
+    %listf<meta> = %file-data;
+    for %sources.pairs.grep({ .key.IO.stem ~~ %config<last>.list.any }).kv -> $short, %info {
+        my $rendered-io = "$to/$short\.html".IO;
+        render-file($rdp, $to, $short, %info, $rendered-io, %file-data)
+    }
     'file-data.rakuon'.IO.spurt: %file-data.raku;
+}
+sub render-file($rdp, $to, $short, %info, $rendered-io, %file-data) {
+    say "rendering { %info<path> } to $rendered-io";
+    my $path := %info<path>;
+    my $processed = $rdp.render($path.slurp.AST, :source-data(%(
+        name => $short,
+        modified => %info<modified>,
+        :$path,
+    )), :pre-finalised);
+    with $short.IO.dirname { mktree "$to/$_" unless "$to/$_".IO ~~ :e & :d }
+    $rendered-io.spurt($rdp.finalise);
+    %file-data{$short} = %(
+        title => $processed.title,
+        subtitle => $processed.subtitle ?? $processed.subtitle !! 'No description',
+        config => $processed.source-data<rakudoc-config>,
+    );
 }
 
 sub elucid8-install( $config --> Hash ) {

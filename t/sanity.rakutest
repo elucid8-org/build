@@ -1,8 +1,14 @@
 use v6.d;
 use Test;
 
-plan 2;
-use-ok 'Elucid8-Build';
-use-ok 'Elucid8::Plugins::HTML::UISwitcher';
+my @modules = <Elucid8::Plugin::HTML::UISwitcher Elucid8::Plugin::HTML::Raku-Doc-Website
+Elucid8-Build
+>;
+
+plan @modules.elems;
+
+for @modules {
+    use-ok "$_", "Module $_ can be used";
+}
 
 done-testing;

@@ -12,7 +12,7 @@ has %.config =
 	:credit<finanalyst>,
 	:authors<finanalyst>,
     :js([[self.js-text,2],]),
-    :ui-tokens( %( :UI_Switch<Switch UI>, )),
+    :ui-tokens( %( :UI_Switch<Switch UI>, :LangName<English>)),
     :gather-ui-tokens( -> $rdp, %config { self.create-dictionary( $rdp, %config )}),
 ;
 has Str $!dictionary = '';

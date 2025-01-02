@@ -92,6 +92,7 @@ An expansion may be
 =item A string
 =item A Raku closure, which is evaluated when the file is rendered. It may contain
 variables that known at run time. The primary use is for time and date information.
+Data available about a file can only be used on a per-file basis.
 
 After all the I<Elucid8> plugins have been enabled, and hence all the templates with
 UI content are attached to the RakuDoc-processor (rdp) object, the closure in

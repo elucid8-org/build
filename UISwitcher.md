@@ -92,7 +92,7 @@
 
 
 &nbsp;&nbsp;• A string  
-&nbsp;&nbsp;• A Raku closure, which is evaluated when the file is rendered. It may contain variables that known at run time. The primary use is for time and date information.  
+&nbsp;&nbsp;• A Raku closure, which is evaluated when the file is rendered. It may contain variables that known at run time. The primary use is for time and date information. Data available about a file can only be used on a per-file basis.  
 <span class="para" id="edd17b2"></span>After all the *Elucid8* plugins have been enabled, and hence all the templates with UI content are attached to the RakuDoc-processor (rdp) object, the closure in the UISwitcher's dataspace key `gather-ui-tokens` is run with the rdp and the config as the parameters. 
 
 <span class="para" id="f798ce6"></span>A dictionary is created which is placed in a JS file that is added to each website page. The JS file is responsible for setting the UI content, getting a signal to change the content, and changing content. 
@@ -121,7 +121,7 @@
 
 ----
 
-Rendered from docs/UISwitcher.rakudoc/UISwitcher at 19:43 UTC on 2025-01-01
+Rendered from docs/UISwitcher.rakudoc/UISwitcher at 11:38 UTC on 2025-01-02
 
-Source last modified at 19:42 UTC on 2025-01-01
+Source last modified at 21:29 UTC on 2025-01-01
 

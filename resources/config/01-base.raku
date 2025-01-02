@@ -9,4 +9,5 @@
     :ignore(),              #| ignore files in this list
     :destination<publication>, #| directory where rendered HTML files are placed
     :landing-page<index>,   #| name of file where the web-site starts
+    :last(),                #| files that should be rendered after all the others
 )

@@ -15,6 +15,8 @@ has %.config =
         :ChangeTheme<Change Theme>,
         :Index<Index>,
         :NoIndex<No Index for this page>,
+        :FileSource<Source file:>,
+        :SourceModified<Source last modified:>,
         :Time( 'eval' ~ q|{ sprintf( "Rendered at %02d:%02d UTC on %s", .hour, .minute, .yyyy-mm-dd) with now.DateTime }| ),
     )
 ;
@@ -159,13 +161,13 @@ method templates {
                 <div class="container px-4">
                     <nav class="level">
                         <div class="level-item">
-                            Rendered from <span class="footer-field">{%prm<source-data><path>}/{%prm<source-data><name>}
+                            <span class="Elucid8-ui" data-UIToken="FileSource">Source</span><span class="footer-field">{%prm<source-data><name>}
                         </div>
                         <div class="level-item">
                             <span class="Elucid8-ui" data-UIToken="Time">Time</span>
                         </div>
                         <div class="level-item">
-                            Source last modified {(sprintf( "at %02d:%02d UTC on %s", .hour, .minute, .yyyy-mm-dd) with %prm<source-data><modified>.DateTime)}
+                            <span class="Elucid8-ui" data-UIToken="SourceModified">SourceModified</span>{(sprintf( " %02d:%02d UTC, %s", .hour, .minute, .yyyy-mm-dd) with %prm<source-data><modified>.DateTime)}
                         </div>
                     </nav>
                 </div>
