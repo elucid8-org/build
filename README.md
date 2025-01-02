@@ -103,8 +103,10 @@ elucid8-build --config=<布局>
 
 
 
-&nbsp;&nbsp;• <span class="para" id="3991f70"></span>a change in a canonical content source should trigger a change of style in the [equivalent content file](Canonical&lt;->derived links)  
-&nbsp;&nbsp;• editing of derived sources will be more frequent than editing of the canonical sources  
+1. <span class="para" id="3991f70"></span>a change in a canonical content source should trigger a change of style in the [equivalent content file](Canonical&lt;->derived links)  
+
+2. editing of derived sources will be more frequent than editing of the canonical sources  
+
 <span class="para" id="f14308f"></span>For simplicity and initial development, the following are required: 
 
 
@@ -153,9 +155,9 @@ elucid8-build --config=<布局>
 
 9. <span class="para" id="af7e8b1"></span>the **landing-page** is generated  
 
-9.1. <span class="para" id="9b22654"></span>By default, a web page with the name **landing-page*.html*** is auto-generated  
+9.1. <span class="para" id="7475ea6"></span>By default, a web page with the name **landing-page***.html* is auto-generated  
 
-9.2. <span class="para" id="ba2df51"></span>If a source with the name **landing-page*.rakudoc*** exists in the **__sources__** directory, it is used to generate the landing page. A custom block is defined to add the glue contents that are auto-generated.  
+9.2. <span class="para" id="cdc148c"></span>If a source with the name **landing-page***.rakudoc* exists in the **__sources__** directory, it is used to generate the landing page. A custom block is defined to add the glue contents that are auto-generated.  
 
 <div id="Configuration"></div>
 
@@ -249,7 +251,7 @@ Richard Hainsworth, aka finanalyst
 
 ----
 
-Rendered from docs/README.rakudoc/README at 12:13 UTC on 2025-01-02
+Rendered from docs/README.rakudoc/README at 12:21 UTC on 2025-01-02
 
-Source last modified at 12:12 UTC on 2025-01-02
+Source last modified at 12:20 UTC on 2025-01-02
 

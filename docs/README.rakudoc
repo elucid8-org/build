@@ -74,9 +74,9 @@ Consequently,
 do not need to be re-generated, unless a glue source has itself been modified.
 
 In addition,
-=item a change in a canonical content source should trigger a change of style in the
+=numitem a change in a canonical content source should trigger a change of style in the
 L<equivalent content file|#Canonical<->derived links>
-=item editing of derived sources will be more frequent than editing of the canonical
+=numitem editing of derived sources will be more frequent than editing of the canonical
 sources
 
 For simplicity and initial development, the following are required:
@@ -106,8 +106,8 @@ is modified. (This implies that changes cascade up the regeneration order)
 =numitem2 the content source is newer than the generated file
 =numitem the glue sources are generated as per the canonical glue sources
 =numitem the B<landing-page> is generated
-=numitem2 By default, a web page with the name B<landing-pageI<.html>> is auto-generated
-=numitem2 If a source with the name B<landing-pageI<.rakudoc>> exists in the R<sources>
+=numitem2 By default, a web page with the name B<landing-page>I<.html> is auto-generated
+=numitem2 If a source with the name B<landing-page>I<.rakudoc> exists in the R<sources>
 directory, it is used to generate the landing page. A custom block is defined to add the
 glue contents that are auto-generated.
 
