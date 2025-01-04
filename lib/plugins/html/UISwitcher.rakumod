@@ -88,7 +88,7 @@ method js-text {
             elem.innerHTML = dictionary[newLang][token];
         });
         uiselectors.forEach( function (rem) {
-            if ( rem.innerHTML == newLang ) {
+            if ( rem.getAttribute('data-UIToken') == newLang ) {
                 rem.classList.add('is-selected')
             }
             else {

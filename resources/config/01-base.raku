@@ -9,5 +9,8 @@
     :ignore(),              #| ignore files in this list
     :destination<publication>, #| directory where rendered HTML files are placed
     :landing-page<index>,   #| name of file where the web-site starts
-    :last(),                #| files that should be rendered after all the others
+    :glues( {               #| files that should be rendered after all the others
+                            #| the files are in the form :filename( n ), where n >= 1
+                            #| n is rendered before n+1
+        } ),
 )

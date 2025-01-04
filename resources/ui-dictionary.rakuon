@@ -1,42 +1,63 @@
 {
-	｢en｣ => {
-		｢langName｣    => "English",
-		｢UI_Switch｣   => "Switch UI",
-		｢Time｣        => "eval\{ sprintf( \"Rendered at \%02d:\%02d UTC on \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
-		｢Index｣       => "Index",
-		｢NoIndex｣     => "No Index for this page",
-		｢TOC｣         => "Table of Contents",
-		｢NoTOC｣       => "No Table of contents for this page",
-		｢ChangeTheme｣ => "Change Theme"
+	｢cy｣ => {
+		｢FileSource｣     => "Ffeil ffynhonnell: ",
+		｢NoTOC｣       => "Dim Tabl cynnwys ar gyfer y dudalen hon",
+		｢Time｣        => "eval\{ sprintf( \"Wedi'i rendro am \%02d:\%02d UTC ar \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+		｢UI_Switch｣   => "Newid UI",
+		｢ChangeTheme｣ => "Newid Thema",
+		｢TOC｣         => "Tabl Cynnwys",
+		｢NoIndex｣     => "Dim Mynegai ar gyfer y dudalen hon",
+		｢langName｣    => "Cymraeg",
+		｢Index｣       => "Mynegai",
+		｢SourceModified｣ => "Ffynhonnell a addaswyd ddiwethaf: "
 	},
 	｢fr｣ => {
-	    ｢langName｣    => "Français",
+		｢FileSource｣     => "Fichier source: ",
+		｢langName｣    => "Français",
+		｢ChangeTheme｣ => "Changer de thème",
+		｢TOC｣         => "Table des matières",
 		｢UI_Switch｣   => "Changer d'IU",
-        ｢Time｣        => "eval\{ sprintf( \"Rendu à\%02d:\%02d UTC à \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
-        ｢Index｣       => "Index",
-        ｢NoIndex｣     => "Aucun index pour cette page",
-        ｢TOC｣         => "Table des matières",
-        ｢NoTOC｣       => "Aucune table des matières pour cette page",
-        ｢ChangeTheme｣ => "Changer de thème"
-    },
-    ｢ua｣ => {
-	    ｢langName｣    => "Українська",
-        ｢UI_Switch｣   => "Інтерфейс користувача",
-        ｢Time｣        => "eval\{ sprintf( \"Виведено о \%02d:\%02d UTC на \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
-        ｢Index｣       => "Індекс",
-        ｢NoIndex｣     => "Немає індексу для цієї сторінки",
-        ｢TOC｣         => "Зміст",
-        ｢NoTOC｣       => "Немає змісту цієї сторінки",
-        ｢ChangeTheme｣ => "Змінити тему"
-    },
+		｢NoIndex｣     => "Aucun index pour cette page",
+		｢Index｣       => "Index",
+		｢Time｣        => "eval\{ sprintf( \"Rendu à \%02d:\%02d UTC à \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+		｢NoTOC｣       => "Aucune table des matières pour cette page",
+		｢SourceModified｣ => "Source dernière modification: "
+	},
+	｢en｣ => {
+		｢TOC｣            => "Table of Contents",
+		｢NoTOC｣          => "No Table of contents for this page",
+		｢LangName｣       => "English",
+		｢Time｣           => "eval\{ sprintf( \"Rendered at \%02d:\%02d UTC on \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+		｢Index｣          => "Index",
+		｢FileSource｣     => "Source file: ",
+		｢NoIndex｣        => "No Index for this page",
+		｢langName｣       => "English",
+		｢ChangeTheme｣    => "Change Theme",
+		｢UI_Switch｣      => "Switch UI",
+		｢SourceModified｣ => "Source last modified: "
+	},
+	｢ua｣ => {
+		｢FileSource｣     => "SВихідний файл: ",
+		｢ChangeTheme｣ => "Змінити тему",
+		｢UI_Switch｣   => "Інтерфейс користувача",
+		｢Time｣        => "eval\{ sprintf( \"Виведено о \%02d:\%02d UTC на \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
+		｢langName｣    => "Українська",
+		｢NoTOC｣       => "Немає змісту цієї сторінки",
+		｢Index｣       => "Індекс",
+		｢NoIndex｣     => "Немає індексу для цієї сторінки",
+		｢TOC｣         => "Зміст",
+		｢SourceModified｣ => "Джерело востаннє змінено: "
+	},
 	｢nl｣ => {
-	    ｢langName｣    => "Nederlands",
+		｢FileSource｣     => "Bronbestand: ",
+		｢ChangeTheme｣ => "Thema wijzigen",
+		｢NoIndex｣     => "Geen index voor deze pagina",
 		｢UI_Switch｣   => "Switch UI",
+		｢NoTOC｣       => "Geen inhoudsopgave voor deze pagina",
+		｢langName｣    => "Nederlands",
+		｢TOC｣         => "Inhoudsopgave",
 		｢Time｣        => "eval\{ sprintf( \"Gerenderd at \%02d:\%02d UTC on \%s\", .hour, .minute, .yyyy-mm-dd) with now.DateTime }",
 		｢Index｣       => "Index",
-		｢NoIndex｣     => "Geen index voor deze pagina",
-		｢TOC｣         => "Inhoudsopgave",
-		｢NoTOC｣       => "Geen inhoudsopgave voor deze pagina",
-		｢ChangeTheme｣ => "Thema wijzigen"
-	},
+		｢SourceModified｣ => "Bron laatst gewijzigd:"
+	}
 }
