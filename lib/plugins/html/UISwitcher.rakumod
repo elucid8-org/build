@@ -63,6 +63,7 @@ method js-text {
     /* UISwitcher */
     var UILang;
     var uiselectors;
+    var token_spans;
     var uilang_persisted = function () { return localStorage.getItem('ui_lang');};
     var persist_uilang = function ( uilang ) { localStorage.setItem( 'ui_lang', uilang );};
     document.addEventListener('DOMContentLoaded', function () {
@@ -72,6 +73,7 @@ method js-text {
         }
         makeUISelector( UILang ); // comes before setUI as it has a label that needs setting
         uiselectors = document.querySelectorAll('.UISelection'); // uiselectors used in setUI
+        token_spans = document.querySelectorAll('.Elucid8-ui');
         setUI( UILang );
         uiselectors.forEach( function (elem) {
             elem.addEventListener('click', function( event ) {
@@ -82,13 +84,12 @@ method js-text {
         })
     });
     function setUI( newLang ) {
-        var spans = document.querySelectorAll('.Elucid8-ui');
-        spans.forEach( function (elem) {
+        token_spans.forEach( function (elem) {
             token = elem.getAttribute('data-UIToken');
             elem.innerHTML = dictionary[newLang][token];
         });
         uiselectors.forEach( function (rem) {
-            if ( rem.getAttribute('data-UIToken') == newLang ) {
+            if ( rem.getAttribute('data-lang') == newLang ) {
                 rem.classList.add('is-selected')
             }
             else {
