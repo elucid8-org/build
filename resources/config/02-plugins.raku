@@ -8,5 +8,6 @@
     plugins => <
         UISwitcher
         Raku-Doc-Website
+        AutoIndex
     >,
 )

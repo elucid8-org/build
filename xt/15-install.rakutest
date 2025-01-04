@@ -8,6 +8,7 @@ if $dir.IO ~~ :e & :d {
     empty-directory $dir
 }
 else { mktree $dir }
+my $cwd = $*CWD;
 &chdir( $dir );
 plan 6;
 my @args = <<$*EXECUTABLE -I.. ../bin/elucid8-build>>;
@@ -25,7 +26,7 @@ runs_ok(
 );
 subtest 'config directories made' => {
     plan 4;
-    for <config config/sources config/L10N config/sources/canonical> {
+    for <config sources L10N sources/en> {
         ok .IO ~~ :e & :d, "$_ dir installed"
     }
 }
@@ -45,10 +46,12 @@ runs_ok(
 );
 subtest 'custom config directories made' => {
     plan 4;
-    for <qwert qwert/sources qwert/L10N qwert/sources/canonical> {
+    for <qwert sources L10N sources/en> {
         ok .IO ~~ :e & :d, "$_ dir installed"
     }
 }
+
+&chdir( $cwd );
 rmtree $dir;
 
 done-testing;

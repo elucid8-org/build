@@ -12,6 +12,7 @@ class Elucid8::Engine {
     has $!to;
     has $!canonical;
     has %!sources;
+    has $!landing-page;
     has $!landing-source;
     has @!derived-langs;
     has %!file-data;
@@ -22,12 +23,13 @@ class Elucid8::Engine {
         $!src = %!config<sources>;
         $!to = %!config<destination>;
         $!canonical = %!config<canonical>;
+        $!landing-page = %!config<landing-page>;
     }
 
     method process-all {
         my @todo = $!src.IO.dir
             .map({ # only save the over-riding landing page source
-                if .f && .Str eq ( %!config<landing-page> ~ '.rakudoc' ) { $!landing-source = .slurp };
+                if .f && (.Str eq ( $!landing-page ~ '.rakudoc' ) ) { $!landing-source = .slurp };
                 $_
             })
             .grep( *.d ); # directories under sources must contain language content
@@ -61,13 +63,15 @@ class Elucid8::Engine {
         mktree $!to unless $!to.IO ~~ :e & :d;
         @!withs = %!config<with-only>.comb( / \S+ /);
         %!glues = %!config<glues>;
+        my @rendered-glues;
         my @canon-changes;
         my $content-changed = self.render-contents( $!canonical, @canon-changes, :canon );
-        self.render-glues( $!canonical, @canon-changes, :canon, :$content-changed );
+        @rendered-glues.push: $!canonical => self.render-glues( $!canonical, @canon-changes, :canon, :$content-changed );
         for @!derived-langs {
             $content-changed = self.render-contents( $_, @canon-changes );
-            self.render-glues( $_, @canon-changes, :$content-changed );
+            @rendered-glues.push: $_ =>  self.render-glues( $_, @canon-changes, :$content-changed );
         }
+        self.landing-page( @rendered-glues );
     }
 
     method render-contents( $lang, @canon-changes, Bool :$canon = False --> Bool ) {
@@ -81,7 +85,7 @@ class Elucid8::Engine {
             {
             with $short.IO.dirname { mktree "$!to/$lang/$_" unless "$!to/$lang/$_".IO ~~ :e & :d }
             my $rendered-io = "$!to/$lang/$short\.html".IO;
-            my $do-file = $!f || (%!file-data{$short}:!exists)
+            my $do-file = $!f || (%!file-data{$lang}{$short}:!exists)
                              || !$rendered-io.f
                              || %info<modified> > $rendered-io.modified
                              || ( $canon.not and $short (elem) @canon-changes )
@@ -93,8 +97,9 @@ class Elucid8::Engine {
         $changes
     }
 
-    method render-glues( $lang, @canon-changes, Bool :$canon = False, Bool :$content-changed ) {
+    method render-glues( $lang, @canon-changes, Bool :$canon = False, Bool :$content-changed --> Array ) {
         my @withs := @!withs;
+        my @rendered-glues;
         for %!sources{ $lang }.pairs
             .grep({ any( %!glues.keys>>.starts-with( .key ) ) })
             .grep({ @withs.elems == 0 or .key ~~ / @withs /})
@@ -103,33 +108,68 @@ class Elucid8::Engine {
             -> $short, %info
             {
             my %listf := $!rdp.templates.data<listfiles>;
-            %listf<meta> = %!file-data;
+            %listf<meta> = %!file-data{$lang};
             with $short.IO.dirname { mktree "$!to/$lang/$_" unless "$!to/$lang/$_".IO ~~ :e & :d }
             my $rendered-io = "$!to/$lang/$short\.html".IO;
             my $do-file = $!f || $content-changed
-                             || (%!file-data{$short}:!exists)
+                             || (%!file-data{$lang}{$short}:!exists)
                              || !$rendered-io.f
                              || %info<modified> > $rendered-io.modified
                              || ( $canon.not and $short (elem) @canon-changes )
                              ;
             self.render-file($short, %info, $rendered-io) if $do-file;
-            @canon-changes.push( $short ) if $canon and $do-file;
+            @canon-changes.push($short) if $canon and $do-file;
+            @rendered-glues.push: %( ( %!file-data{$lang}<title subtitle>:p ).Slip, :rendered-to );
         }
+        @rendered-glues
+    }
+
+    method landing-page( @glue-files ) {
+        my %listf := $!rdp.templates.data<AutoIndex>;
+        %listf<meta> = @glue-files;
+        my $auto-rakudoc = qq:to/AUTO/;
+        =begin rakudoc :!toc :!index
+        =TITLE { %!config<landing-title> }
+        =SUBTITLE { %!config<landing-subtitle> }
+        =AutoIndex
+        =end rakudoc
+        AUTO
+        say "rendering $!landing-page";
+        my $ast = ($!landing-page ?? $!landing-page !! $auto-rakudoc).AST;
+        my $path = $!landing-page ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916"; # robot face
+        my $modified = $!landing-page ?? $path.IO.modified !! now;
+        my $processed = $!rdp.render(
+            $ast,
+            :source-data(%(
+                name => $!landing-page,
+                :$modified,
+                :$path,
+            language => $!canonical
+        )), :pre-finalised);
+        "$!to/$!landing-page\.html".spurt($!rdp.finalise);
+        %!file-data{$!landing-page} = %(
+            title => $processed.title,
+            subtitle => $processed.subtitle ?? $processed.subtitle !! '',
+            config => $processed.source-data<rakudoc-config>,
+            lang => $!canonical
+        );
     }
 
     method render-file($short, %info, $rendered-io) {
         say "rendering { %info<path> } to $rendered-io";
         my $path := %info<path>;
+        my $lang := %info<lang>;
         my $processed = $!rdp.render($path.slurp.AST, :source-data(%(
             name => $short,
             modified => %info<modified>,
             :$path,
+            language => $lang
         )), :pre-finalised);
         $rendered-io.spurt($!rdp.finalise);
-        %!file-data{$short} = %(
+        %!file-data{$lang}{$short} = %(
             title => $processed.title,
-            subtitle => $processed.subtitle ?? $processed.subtitle !! 'No description',
-            config => $processed.source-data<rakudoc-config>,
+            subtitle => $processed.subtitle ?? $processed.subtitle !! '',
+            config => $processed.source-data<rakudoc-config>
         );
     }
     method store( %dict, $fn ) {
