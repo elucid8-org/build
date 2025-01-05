@@ -119,25 +119,26 @@ class Elucid8::Engine {
                              ;
             self.render-file($short, %info, $rendered-io) if $do-file;
             @canon-changes.push($short) if $canon and $do-file;
-            @rendered-glues.push: %( ( %!file-data{$lang}<title subtitle>:p ).Slip, :rendered-to );
+            @rendered-glues.push: %( ( %!file-data{$lang}{$short}<title subtitle>:p ).Slip,:$short );
         }
         @rendered-glues
     }
 
     method landing-page( @glue-files ) {
-        my %listf := $!rdp.templates.data<AutoIndex>;
-        %listf<meta> = @glue-files;
+        my %autof := $!rdp.templates.data<AutoIndex>;
+        %autof<meta> = @glue-files;
         my $auto-rakudoc = qq:to/AUTO/;
         =begin rakudoc :!toc :!index
         =TITLE { %!config<landing-title> }
         =SUBTITLE { %!config<landing-subtitle> }
-        =AutoIndex
+        =for AutoIndex :!toc
         =end rakudoc
         AUTO
         say "rendering $!landing-page";
-        my $ast = ($!landing-page ?? $!landing-page !! $auto-rakudoc).AST;
-        my $path = $!landing-page ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916"; # robot face
-        my $modified = $!landing-page ?? $path.IO.modified !! now;
+        my Bool $got = $!landing-source.so;
+        my $ast = ($got ?? $!landing-source !! $auto-rakudoc).AST;
+        my $path = $got ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916"; # robot face
+        my $modified = $got ?? $path.IO.modified !! now;
         my $processed = $!rdp.render(
             $ast,
             :source-data(%(
@@ -146,7 +147,7 @@ class Elucid8::Engine {
                 :$path,
             language => $!canonical
         )), :pre-finalised);
-        "$!to/$!landing-page\.html".spurt($!rdp.finalise);
+        "$!to/$!landing-page\.html".IO.spurt($!rdp.finalise);
         %!file-data{$!landing-page} = %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
@@ -238,7 +239,10 @@ multi sub MAIN(
 
 multi sub MAIN(
     Bool :version(:$v)! #= Return version of distribution
-) { say 'Using version ', $?DISTRIBUTION.meta<version>, ' of elucid8-build distribution.' if $v };
+) {
+    say 'Using version ', $?DISTRIBUTION.meta<version>, ' of elucid8-build distribution.' if $v;
+    say 'Rakudoc::Processor version: ', RakuDoc::Processor.^ver
+};
 
 multi sub MAIN(
     :$config = 'config',      #| local config file
@@ -260,7 +264,7 @@ multi sub MAIN(
     }
     my $rdp = RakuDoc::To::HTML.new.rdp;
     $rdp.debug( $debug );
-    $rdp.debug( $verbose );
+    $rdp.verbose( $verbose );
     $rdp.add-plugins( 'RakuDoc::Plugin::HTML::' «~« %config<rakuast-rakudoc-plugins>.list );
     $rdp.add-plugins( 'Elucid8::Plugin::HTML::' «~« %config<plugins>.list );
     # for each plugin, check whether there are plugin-options for the plugin

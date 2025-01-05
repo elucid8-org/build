@@ -25,7 +25,10 @@ method enable( RakuDoc::Processor:D $rdp ) {
     $rdp.add-data( %!config<name-space>, %!config );
 }
 method templates {
-    %(#| head-block, what goes in the head tab
+    %(
+        #| Required for index page
+        Html => -> %prm, $ { %prm<raw> },
+        #| head-block, what goes in the head tab
         head-block => -> %prm, $tmpl {
             my %g-data := $tmpl.globals.data;
             # handle css first

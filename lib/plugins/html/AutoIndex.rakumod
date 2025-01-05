@@ -22,17 +22,19 @@ method templates {
             </div>
             ERROR
         my $rv;
-        for $tmpl.globals.data<AutoIndex><meta>.kv -> $lang, @glues {
-                # data is config, title, desc
+        for $tmpl.globals.data<AutoIndex><meta>.Slip {
+            my $lang = .key;
+            my @glues = .value;
+            # data is config, title, desc
             $rv = qq:to/FIRST/;
                 <div class="autof-container">
                 <p class="autof-caption">{ $lang }</p>
                 FIRST
-            for  @glues -> (:$title, :$subtitle, :$rendered-to) {
+            for  @glues {
                 $rv ~= qq:to/NOFL/;
                     <div class="autof-file">
-                    <a class="autof-link" href="$rendered-to">$title\</a>
-                    $subtitle\</div>
+                    <a class="autof-link" href="{.<short>}">{.<title>}\</a>
+                    {.<subtitle>}</div>
                 NOFL
             }
             $rv ~= '</div>'
