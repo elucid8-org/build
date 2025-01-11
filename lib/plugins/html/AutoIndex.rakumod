@@ -22,13 +22,14 @@ method templates {
             </div>
             ERROR
         my $rv;
-        for $tmpl.globals.data<AutoIndex><meta>.Slip {
+        my %autof := $tmpl.globals.data<AutoIndex>;
+        for %autof<meta>.Slip {
             my $lang = .key;
             my @glues = .value;
             # data is config, title, desc
             $rv = qq:to/FIRST/;
                 <div class="autof-container">
-                <p class="autof-caption">{ $lang }</p>
+                <p class="autof-caption">{ %autof<language-list>{ $lang } } ($lang)</p>
                 FIRST
             for  @glues {
                 $rv ~= qq:to/NOFL/;

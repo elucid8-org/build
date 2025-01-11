@@ -127,6 +127,7 @@ class Elucid8::Engine {
     method landing-page( @glue-files ) {
         my %autof := $!rdp.templates.data<AutoIndex>;
         %autof<meta> = @glue-files;
+        %autof<language-list> = %!config<language-list>;
         my $auto-rakudoc = qq:to/AUTO/;
         =begin rakudoc :!toc :!index
         =TITLE { %!config<landing-title> }
@@ -145,7 +146,8 @@ class Elucid8::Engine {
                 name => $!landing-page,
                 :$modified,
                 :$path,
-            language => $!canonical
+                language => $!canonical,
+                :landing-page, # set to True
         )), :pre-finalised);
         "$!to/$!landing-page\.html".IO.spurt($!rdp.finalise);
         %!file-data{$!landing-page} = %(
@@ -159,15 +161,16 @@ class Elucid8::Engine {
     method render-file($short, %info, $rendered-io) {
         say "rendering { %info<path> } to $rendered-io";
         my $path := %info<path>;
-        my $lang := %info<lang>;
+        my $language := %info<lang>;
         my $processed = $!rdp.render($path.slurp.AST, :source-data(%(
             name => $short,
             modified => %info<modified>,
             :$path,
-            language => $lang
+            :$language,
+            landing-page => $short.ends-with( %!config<landing-page> )
         )), :pre-finalised);
         $rendered-io.spurt($!rdp.finalise);
-        %!file-data{$lang}{$short} = %(
+        %!file-data{$language}{$short} = %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>
@@ -248,7 +251,8 @@ multi sub MAIN(
     :$config = 'config',      #| local config file
     Bool :force(:$f) = False, #| force complete rendering, otherwise only modified
     Str :$debug = 'None',     #| RakuAST-RakuDoc-Render debug list
-    Str :$verbose = '',        #| RakuAST-RakuDoc-Render verbose parameter
+    Str :$verbose = '',       #| RakuAST-RakuDoc-Render verbose parameter
+    Str :$with-only,          #| only render these files, over-rides the config value
 ) {
     my %config;
     if $config.IO ~~ :e & :d {
@@ -262,6 +266,7 @@ multi sub MAIN(
         }
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
+    %config<with-only> = $_ with $with-only; # only over-ride if set
     my $rdp = RakuDoc::To::HTML.new.rdp;
     $rdp.debug( $debug );
     $rdp.verbose( $verbose );
@@ -281,6 +286,7 @@ multi sub MAIN(
     }
     else { $rdp.gather-flatten( 'css', :@reserved) }
     $rdp.templates.data<UISwitcher><gather-ui-tokens>.( $rdp, %config );
+    $rdp.templates.data<UISwitcher><add-languages>.( %config );
     $rdp.gather-flatten(<css-link js-link js>, :@reserved );
     my Elucid8::Engine $engine .= new(:$rdp, :%config, :$f );
     $engine.process-all

@@ -1,6 +1,6 @@
 %(
     rakuast-rakudoc-plugins => <
-      Bulma Hilite
+      Hilite
       ListFiles
       Graphviz FontAwesome Latex LeafletMaps
       SCSS
