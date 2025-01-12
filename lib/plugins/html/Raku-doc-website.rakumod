@@ -440,6 +440,7 @@ method js-text {
     var originalIndex;
     var originalTOC;
     var matchTocState = function ( state ) {
+        if (document.getElementById("TOC") == null) { return };
         if ( state ) {
             document.getElementById("TOC").classList.remove('is-hidden');
             document.getElementById("page-nav").classList.remove('is-hidden');
@@ -460,6 +461,7 @@ method js-text {
         }
     }
     var setTocState = function ( state ) {
+        if (document.getElementById("TOC") == null) { return };
         if ( state === 'closed') {
             document.getElementById("TOC").classList.add('is-hidden');
             document.getElementById("page-nav").classList.add('is-hidden');
@@ -518,21 +520,23 @@ method js-text {
             change_theme(theme);
             persist_theme(theme);
         });
-        document.getElementById("navbar-toc-toggle").addEventListener('change', function() {
-            matchTocState( this.checked )
-        });
-        document.getElementById('toc-tab').addEventListener('click', function () { swap_toc_index('','toc') });
-        document.getElementById('index-tab').addEventListener('click', function () { swap_toc_index('','index') });
-        document.getElementById('mtoc-tab').addEventListener('click', function () { swap_toc_index('m','toc') });
-        document.getElementById('mindex-tab').addEventListener('click', function () { swap_toc_index('m','index') });
-        originalTOC = document.getElementById('toc-menu').getHTML();
-        originalIndex = document.getElementById('index-menu').getHTML();
-        document.getElementById("page-nav-search").addEventListener('keyup', function (event) {
-            filtersearch(event, 'toc-menu', 'index-menu', 'page-nav')
-        });
-        document.getElementById("mobile-nav-search").addEventListener('keyup', function (event) {
-            filtersearch(event, 'mtoc-menu', 'mindex-menu', 'mobile-nav')
-        });
+        if (document.getElementById("navbar-toc-toggle") !== null ) {
+            document.getElementById("navbar-toc-toggle").addEventListener('change', function() {
+                matchTocState( this.checked )
+            });
+            document.getElementById('toc-tab').addEventListener('click', function () { swap_toc_index('','toc') });
+            document.getElementById('index-tab').addEventListener('click', function () { swap_toc_index('','index') });
+            document.getElementById('mtoc-tab').addEventListener('click', function () { swap_toc_index('m','toc') });
+            document.getElementById('mindex-tab').addEventListener('click', function () { swap_toc_index('m','index') });
+            originalTOC = document.getElementById('toc-menu').getHTML();
+            originalIndex = document.getElementById('index-menu').getHTML();
+            document.getElementById("page-nav-search").addEventListener('keyup', function (event) {
+                filtersearch(event, 'toc-menu', 'index-menu', 'page-nav')
+            });
+            document.getElementById("mobile-nav-search").addEventListener('keyup', function (event) {
+                filtersearch(event, 'mtoc-menu', 'mindex-menu', 'mobile-nav')
+            });
+        }
     });
     function filtersearch(event, toc,index,nav) {
         document.getElementById(toc).innerHTML = originalTOC;
@@ -726,6 +730,32 @@ method raku-webs-scss {
             display:block;
             width:auto;
             white-space:normal;
+        }
+    }
+    /* Hopepage title */
+    .raku-webs {
+        .hero-body {
+            background: linear-gradient(180deg, #051A33 0.2%, #3F103A 1%, #9F0046 82.29%, #B3004F 100%);
+            mix-blend-mode: normal;
+            .title,.subtitle {
+                color: white;
+            }
+        }
+        .card-content .icon.is-large {
+            height: 6rem;
+            width: 6rem;
+            font-size: 96px;
+        }
+        .links-block .icon.is-large {
+            height: 6rem;
+            width: 6rem;
+            font-size: 96px;
+        }
+        .card .button {
+          width: 200px;
+        }
+        .card-home {
+          box-shadow: unset !important;
         }
     }
     SCSS
