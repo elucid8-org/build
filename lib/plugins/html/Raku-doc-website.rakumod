@@ -109,8 +109,13 @@ method templates {
             qq:to/NAV/
             <nav class="navbar is-fixed-top raku-webs" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
-                { # remove TOC opener if direct-wrap exists and is true
-                  %prm<source-data><rakudoc-config><direct-wrap>:exists && %prm<source-data><rakudoc-config><direct-wrap> ??
+                { # remove TOC opener if direct-wrap exists and is true, or :!toc
+                  (
+                  (%prm<source-data><rakudoc-config><direct-wrap>:exists && %prm<source-data><rakudoc-config><direct-wrap>)
+                   ||
+                   (%prm<source-data><rakudoc-config><toc>:exists && %prm<source-data><rakudoc-config><toc>.not )
+                   )
+                   ??
                     ''
                     !! $tmpl<toc-opener>
                 }
@@ -181,6 +186,9 @@ method templates {
         },
         #| Toc/Index floats below navbar except for mobile
         page-navigation => -> %prm, $tmpl {
+           ( %prm<source-data><rakudoc-config><toc>:exists
+            && %prm<source-data><rakudoc-config><toc>.not )
+            ?? '' !!
             qq:to/SIDEBAR/;
             <nav class="raku-webs panel is-hidden-mobile" id="page-nav">
               <div class="panel-block">
@@ -294,6 +302,21 @@ method templates {
             if %prm<source-data><rakudoc-config><direct-wrap>:exists && %prm<source-data><rakudoc-config><direct-wrap>
             { # no extra styling if direct-wrap exists and is true
                %prm<body>
+            }
+            elsif ( %prm<source-data><rakudoc-config><toc>:exists && %prm<source-data><rakudoc-config><toc>.not )
+            {
+                qq:to/END/
+                { $tmpl<page-navigation> }
+                <div id="MainText" class="panel">
+                    { $tmpl<title-section> }
+                    <div class="content px-4">
+                    { %prm<body> }
+                    </div>
+                    <div class="content px-4">
+                    { %prm<footnotes>.Str }
+                    </div>
+                </div>
+                END
             }
             else {
                 qq:to/END/

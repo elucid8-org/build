@@ -23,18 +23,19 @@ method templates {
             ERROR
         my $rv;
         my %autof := $tmpl.globals.data<AutoIndex>;
-        for %autof<meta>.Slip {
-            my $lang = .key;
-            my @glues = .value;
+        for %autof<meta>.list {
+            my $lang = .[0];
+            my $lang-n = .[1];
+            my @glues = .[2].Slip;
             # data is config, title, desc
             $rv = qq:to/FIRST/;
                 <div class="autof-container">
-                <p class="autof-caption">{ %autof<language-list>{ $lang } } ($lang)</p>
+                <p class="autof-caption">$lang-n ($lang)</p>
                 FIRST
             for  @glues {
                 $rv ~= qq:to/NOFL/;
                     <div class="autof-file">
-                    <a class="autof-link" href="{.<short>}">{.<title>}\</a>
+                    <a class="autof-link" href="$lang/{.<path>}">{.<title>}\</a>
                     {.<subtitle>}</div>
                 NOFL
             }
@@ -47,6 +48,8 @@ method templates {
 method add-scss {
     q:to/SCSS/;
     .autof-container {
+      width: fit-content;
+      margin: auto;
       display: flex;
       flex-direction: column;
       margin-bottom: 1.25rem;
@@ -68,10 +71,10 @@ method add-scss {
           border-top: 1px solid #cccccc;
           border-bottom: 1px solid #cccccc;
           break-inside: avoid;
+          text-align: center;
           .autof-link {
               display: inline-block;
               width: 100%;
-              text-align: center;
               padding-top: 0.25rem;
           }
           p {

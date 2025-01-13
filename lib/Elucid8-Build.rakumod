@@ -63,15 +63,14 @@ class Elucid8::Engine {
         mktree $!to unless $!to.IO ~~ :e & :d;
         @!withs = %!config<with-only>.comb( / \S+ /);
         %!glues = %!config<glues>;
-        my @rendered-glues;
         my @canon-changes;
         my $content-changed = self.render-contents( $!canonical, @canon-changes, :canon );
-        @rendered-glues.push: $!canonical => self.render-glues( $!canonical, @canon-changes, :canon, :$content-changed );
+        self.render-glues( $!canonical, @canon-changes, :canon, :$content-changed );
         for @!derived-langs {
             $content-changed = self.render-contents( $_, @canon-changes );
-            @rendered-glues.push: $_ =>  self.render-glues( $_, @canon-changes, :$content-changed );
+            self.render-glues( $_, @canon-changes, :$content-changed );
         }
-        self.landing-page( @rendered-glues );
+        self.landing-page;
     }
 
     method render-contents( $lang, @canon-changes, Bool :$canon = False --> Bool ) {
@@ -99,7 +98,6 @@ class Elucid8::Engine {
 
     method render-glues( $lang, @canon-changes, Bool :$canon = False, Bool :$content-changed --> Array ) {
         my @withs := @!withs;
-        my @rendered-glues;
         for %!sources{ $lang }.pairs
             .grep({ any( %!glues.keys>>.starts-with( .key ) ) })
             .grep({ @withs.elems == 0 or .key ~~ / @withs /})
@@ -119,15 +117,40 @@ class Elucid8::Engine {
                              ;
             self.render-file($short, %info, $rendered-io) if $do-file;
             @canon-changes.push($short) if $canon and $do-file;
-            @rendered-glues.push: %( ( %!file-data{$lang}{$short}<title subtitle>:p ).Slip,:$short );
         }
-        @rendered-glues
     }
-
-    method landing-page( @glue-files ) {
+    #| create the website landing page, generate each time
+    #| file data contains all rendered files
+    #| Glues contains glue files in reverse order of appearance
+    method landing-page {
         my %autof := $!rdp.templates.data<AutoIndex>;
+        #| list of arrays ordered by lang (canonical first), then its long name,
+        #| then a list of glue files with fields ordered according to the reverse of the
+        #| order in the plugins config
+        my @glue-files = %!file-data.pairs.grep(
+            *.key.starts-with( $!canonical )
+        ).map({
+            [ .key,
+                %!config<language-list>{ .key },
+                (.value.pairs.grep({ .key eq any( %!glues.keys ) })
+                            .sort({ %!glues{ .key } }).reverse
+                            .map({ ( .value<title subtitle path>:p.Slip, :path( .key ) ).Hash })
+                            ).Array
+            ]
+        }).Slip;
+        for %!file-data.pairs.grep({ .key ne $!landing-page })
+            .grep(
+                *.key.starts-with( $!canonical ).not
+            ) {
+                @glue-files.push: [ .key,
+                    %!config<language-list>{ .key },
+                    (.value.pairs.grep({ .key eq any( %!glues.keys ) })
+                                .sort({ %!glues{ .key } }).reverse
+                                .map({ ( .value<title subtitle path>:p.Slip, :path( .key ) ).Hash })
+                                ).Array
+                ]
+        }
         %autof<meta> = @glue-files;
-        %autof<language-list> = %!config<language-list>;
         my $auto-rakudoc = qq:to/AUTO/;
         =begin rakudoc :!toc :!index
         =TITLE { %!config<landing-title> }
