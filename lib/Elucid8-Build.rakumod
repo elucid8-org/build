@@ -4,26 +4,156 @@ use RakuConfig;
 use File::Directory::Tree;
 use PrettyDump;
 
-class Elucid8::Engine {
-    has $!rdp;
-    has %!config;
-    has $!f;
-    has $!src;
-    has $!to;
-    has $!canonical;
-    has %!sources;
-    has $!landing-page;
-    has $!landing-source;
-    has @!derived-langs;
-    has %!file-data;
-    has @!withs;
-    has %!glues;
+class Elucid8::Processor is HTML::Processor {
+    has @.pre-process-callables;
+    has @.post-process-callables;
+    has $!file-data-name;
+    has %.file-data;              #| information about rendered files
+                                  #| made available to all plugins
+                                  #| it is initialise from a file when the build
+                                  #| class is instantiated
+    submethod TWEAK ( :$!file-data-name ) {
+        %!file-data = EVALFILE $!file-data-name if $!file-data-name.IO ~~ :e & :f;
+        self.templates.data<file-data> := %!file-data;
+    }
+    #| a method to initialise plugins before processing begins
+    #| each Callable requires the lang and the filename
+    #| the website root is immune to pre-processing
+    method pre-process( $lang, $fn, $ast ) {
+        return unless $lang;
+        .( self, $lang, $fn, $ast ) for @!pre-process-callables
+    }
+    #| process a file after it has been fully rendered
+    #| Not to be confused with post-all-content callables which are called
+    #| by language after ALL content files are processed
+    #| the website root landing page is immune to post-processing
+    method post-process( $final ) {
+        %!file-data<current><toc> = self.current.toc.elems ?? self.current.toc.Array !! [];
+        %!file-data<current><index> = self.current.index.elems ?? self.current.index !! {};
+        # allow for other plugins to affect file-data
+        my $rendered = $final;
+        for @!post-process-callables {
+            $rendered = .( self, $rendered )
+        }
+        %!file-data<current>:delete; # discard now
+        $rendered
+    }
+    method store( %dict, $fn ) {
+        my $pretty = PrettyDump.new;
+        my $pair-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
+            [~]
+                '｢', $ds.key, '｣',
+                ' => ',
+                $pretty.dump: $ds.value, :depth(0)
 
-    submethod TWEAK( :$!rdp, :%!config, :$!f ) {
+            };
+        my $hash-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
+            my $longest-key = $ds.keys.max: *.chars;
+            my $template = "%-{2+$depth+1+$longest-key.chars}s => %s";
+
+            my $str = do {
+                if @($ds).keys {
+                    my $separator = [~] $pretty.pre-separator-spacing, ',', $pretty.post-separator-spacing;
+                    [~]
+                        $pretty.pre-item-spacing,
+                        join( $separator,
+                            grep { $_ ~~ Str:D },
+                            map {
+                                /^ \t* '｢' .*? '｣' \h+ '=>' \h+/
+                                    ??
+                                sprintf( $template, .split: / \h+ '=>' \h+  /, 2 )
+                                    !!
+                                $_
+                                },
+                            map { $pretty.dump: $_, :depth($depth+1) }, $ds.pairs
+                            ),
+                        $pretty.post-item-spacing;
+                    }
+                else {
+                    $pretty.intra-group-spacing;
+                    }
+                }
+
+            "\{$str}"
+            }
+       my $array-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
+            $pretty.Array($ds, :start('['), :$depth)
+        };
+        my $list-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
+            $pretty.List($ds, :start('('), :$depth)
+        };
+        my $rakuast-block-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
+            $pretty.dump: $ds.raku, :depth(0)
+        };
+        $pretty.add-handler: 'Array', $array-code;
+        $pretty.add-handler: 'List', $list-code;
+        $pretty.add-handler: 'Pair', $pair-code;
+        $pretty.add-handler: 'Hash', $hash-code;
+        $pretty.add-handler: 'SetHash', $hash-code;
+        $pretty.add-handler: 'RakuAST::Doc::Block', $rakuast-block-code;
+        $fn.IO.spurt: $pretty.dump(%dict);
+    }
+}
+
+class Elucid8::Engine is RakuDoc::To::HTML {
+    has $!rdp;              #| RakuDoc Process instance
+    has %!config;           #| to contain the site's config data
+    has $!f;                #| force flag - render all files from scratch
+    has $!src;              #| the source directory
+    has $!to;               #| where rendered files are stored
+    has $!canonical;        #| the canonical human language
+    has %!sources;          #| data about all source files in !src
+    has $!file-data-name;   #| name where file data is stored
+    has $!landing-page;     #| name of file(s) served when only route is visible
+    has $!landing-source;   #| content of route landing file to over-ride auto
+    has @!derived-langs;    #| list of languages in !src other than canonical
+    has @!withs;            #| files to be rendered when restricted
+    has %!glues;            #| glue files and their order
+    has @!post-all-content-files; #| callables that operate after all content files
+
+    submethod TWEAK( :%!config, :$!f ) {
         $!src = %!config<sources>;
         $!to = %!config<destination>;
         $!canonical = %!config<canonical>;
+        $!file-data-name = %!config<file-data-name>;
         $!landing-page = %!config<landing-page>;
+        $!rdp = Elucid8::Processor.new(:output-format<html>, :$!file-data-name);
+        $!rdp.add-templates( RakuDoc::To::HTML.new.html-templates, :source<RakuDoc::To::HTML>);
+        $!rdp.add-plugins( 'RakuDoc::Plugin::HTML::' «~« %!config<rakuast-rakudoc-plugins>.list );
+        $!rdp.add-plugins( 'Elucid8::Plugin::HTML::' «~« %!config<plugins>.list );
+        # for each plugin, check whether plugin-options are defined in the site config for the plugin
+        # add them to the plugin's work-space, over-writing default ones
+        my %d := $!rdp.templates.data;
+        for %d.keys -> $wkspc {
+            next unless %!config<plugin-options>{$wkspc}:exists;
+            for %!config<plugin-options>{$wkspc}.kv { %d{$wkspc}{ $^a } = $^b }
+        }
+        # set up the pre and post content callables
+        for %!config<pre-file-render>.kv -> $wkspc, $callable {
+            exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
+                unless %d{$wkspc}{$callable} ~~ Callable;
+            $!rdp.pre-process-callables.push: %d{$wkspc}{$callable}
+        }
+        for %!config<post-file-render>.kv -> $wkspc, $callable {
+            exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
+                unless %d{$wkspc}{$callable} ~~ Callable;
+            $!rdp.post-process-callables.push: %d{$wkspc}{$callable}
+        }
+        for %!config<post-all-content-files>.kv -> $wkspc, $callable {
+            exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
+                unless %d{$wkspc}{$callable} ~~ Callable;
+            @!post-all-content-files.push: %d{$wkspc}{$callable}
+        }
+        my @reserved = <ui-tokens css css-link js js-link>;
+        # run the scss to css conversion after all plugins have been enabled
+        # makes SCSS position independent
+        if %d<SCSS>:exists {
+            %d<SCSS><run-sass>.( $!rdp )
+        }
+        else { $!rdp.gather-flatten( 'css', :@reserved) }
+        %d<UISwitcher><gather-ui-tokens>.( $!rdp, %!config );
+        %d<UISwitcher><add-languages>.( %!config );
+        $!rdp.gather-flatten(<css-link js-link js>, :@reserved );
     }
 
     method process-all {
@@ -54,9 +184,8 @@ class Elucid8::Engine {
             }
         }
         exit note "No sources found in ｢$!src｣" unless +%!sources;
-        %!file-data = EVALFILE 'file-data.rakuon' if 'file-data.rakuon'.IO ~~ :e & :f;
         self.render-files;
-        self.store(%!file-data,'file-data.rakuon');
+        # post-processing saves the file data, so it does not need to happen here
     }
 
     method render-files {
@@ -65,12 +194,23 @@ class Elucid8::Engine {
         %!glues = %!config<glues>;
         my @canon-changes;
         my $content-changed = self.render-contents( $!canonical, @canon-changes, :canon );
-        self.render-glues( $!canonical, @canon-changes, :canon, :$content-changed );
-        for @!derived-langs {
-            $content-changed = self.render-contents( $_, @canon-changes );
-            self.render-glues( $_, @canon-changes, :$content-changed );
+        if $content-changed {
+            .( $!rdp, $!canonical, $!to ) for @!post-all-content-files;
+            self.render-glues( $!canonical, @canon-changes, :canon );
         }
-        self.landing-page;
+        for @!derived-langs -> $dl {
+            my $dl-content-changed = self.render-contents( $dl, @canon-changes );
+            $content-changed ||= $dl-content-changed;
+            if $content-changed {
+                .( $!rdp, $dl, $!to ) for @!post-all-content-files;
+                self.render-glues( $dl, @canon-changes );
+            }
+        }
+        if $content-changed {
+            self.landing-page;
+            $!rdp.store( $!rdp.file-data, $!file-data-name)
+        }
+        else { say 'Nothing has changed' }
     }
 
     method render-contents( $lang, @canon-changes, Bool :$canon = False --> Bool ) {
@@ -84,7 +224,7 @@ class Elucid8::Engine {
             {
             with $short.IO.dirname { mktree "$!to/$lang/$_" unless "$!to/$lang/$_".IO ~~ :e & :d }
             my $rendered-io = "$!to/$lang/$short\.html".IO;
-            my $do-file = $!f || (%!file-data{$lang}{$short}:!exists)
+            my $do-file = $!f || ($!rdp.file-data{$lang}{$short}:!exists)
                              || !$rendered-io.f
                              || %info<modified> > $rendered-io.modified
                              || ( $canon.not and $short (elem) @canon-changes )
@@ -96,25 +236,26 @@ class Elucid8::Engine {
         $changes
     }
 
-    method render-glues( $lang, @canon-changes, Bool :$canon = False, Bool :$content-changed --> Array ) {
-        my @withs := @!withs;
+    method render-glues( $lang, @canon-changes, Bool :$canon = False --> Array ) {
+        # render all glues if content changed.
+        # TODO add dependency logic to only render glues if dependent content changed
+        my $rdp := $!rdp;
         for %!sources{ $lang }.pairs
             .grep({ any( %!glues.keys>>.starts-with( .key ) ) })
-            .grep({ @withs.elems == 0 or .key ~~ / @withs /})
             .sort({ %!glues{ .key } }) # ensures that the order is according to the render order of glues
             .hash.kv
             -> $short, %info
             {
-            my %listf := $!rdp.templates.data<listfiles>;
-            %listf<meta> = %!file-data{$lang};
+            my %listf := $rdp.templates.data<listfiles>;
+            %listf<meta> = $rdp.file-data{$lang};
             with $short.IO.dirname { mktree "$!to/$lang/$_" unless "$!to/$lang/$_".IO ~~ :e & :d }
             my $rendered-io = "$!to/$lang/$short\.html".IO;
-            my $do-file = $!f || $content-changed
-                             || (%!file-data{$lang}{$short}:!exists)
-                             || !$rendered-io.f
-                             || %info<modified> > $rendered-io.modified
-                             || ( $canon.not and $short (elem) @canon-changes )
-                             ;
+            my $do-file = $!f
+                        || ($rdp.file-data{$lang}{$short}:!exists)
+                        || !$rendered-io.f
+                        || %info<modified> > $rendered-io.modified
+                        || ( $canon.not and $short (elem) @canon-changes )
+                        ;
             self.render-file($short, %info, $rendered-io) if $do-file;
             @canon-changes.push($short) if $canon and $do-file;
         }
@@ -123,11 +264,12 @@ class Elucid8::Engine {
     #| file data contains all rendered files
     #| Glues contains glue files in reverse order of appearance
     method landing-page {
-        my %autof := $!rdp.templates.data<AutoIndex>;
+        my $rdp := $!rdp;
+        my %autof := $rdp.templates.data<AutoIndex>;
         #| list of arrays ordered by lang (canonical first), then its long name,
         #| then a list of glue files with fields ordered according to the reverse of the
         #| order in the plugins config
-        my @glue-files = %!file-data.pairs.grep(
+        my @glue-files = $rdp.file-data.pairs.grep(
             *.key.starts-with( $!canonical )
         ).map({
             [ .key,
@@ -138,10 +280,12 @@ class Elucid8::Engine {
                             ).Array
             ]
         }).Slip;
-        for %!file-data.pairs.grep({ .key ne $!landing-page })
-            .grep(
-                *.key.starts-with( $!canonical ).not
-            ) {
+        for $rdp.file-data.pairs.grep({ .key ne $!landing-page })
+            .grep({
+                .key.starts-with( $!canonical ).not
+                &&
+                .key.starts-with( '*' ).not
+            }) {
                 @glue-files.push: [ .key,
                     %!config<language-list>{ .key },
                     (.value.pairs.grep({ .key eq any( %!glues.keys ) })
@@ -158,12 +302,13 @@ class Elucid8::Engine {
         =for AutoIndex :!toc
         =end rakudoc
         AUTO
-        say "rendering $!landing-page";
+        say "rendering website root $!landing-page";
         my Bool $got = $!landing-source.so;
         my $ast = ($got ?? $!landing-source !! $auto-rakudoc).AST;
         my $path = $got ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916"; # robot face
         my $modified = $got ?? $path.IO.modified !! now;
-        my $processed = $!rdp.render(
+        $rdp.pre-process( '*', $!landing-page, $ast );
+        my $processed = $rdp.render(
             $ast,
             :source-data(%(
                 name => $!landing-page,
@@ -172,8 +317,8 @@ class Elucid8::Engine {
                 language => $!canonical,
                 :landing-page, # set to True
         )), :pre-finalised);
-        "$!to/$!landing-page\.html".IO.spurt($!rdp.finalise);
-        %!file-data{$!landing-page} = %(
+        "$!to/$!landing-page\.html".IO.spurt($rdp.finalise);
+        $rdp.file-data{'*'}{$!landing-page}{ .key } = .value for %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
@@ -185,62 +330,22 @@ class Elucid8::Engine {
         say "rendering { %info<path> } to $rendered-io";
         my $path := %info<path>;
         my $language := %info<lang>;
-        my $processed = $!rdp.render($path.slurp.AST, :source-data(%(
+        my $ast = $path.slurp.AST;
+        my $rdp := $!rdp;
+        $rdp.pre-process( $language, $short, $ast );
+        my $processed = $rdp.render($ast, :source-data(%(
             name => $short,
             modified => %info<modified>,
             :$path,
             :$language,
             landing-page => $short.ends-with( %!config<landing-page> )
         )), :pre-finalised);
-        $rendered-io.spurt($!rdp.finalise);
-        %!file-data{$language}{$short} = %(
+        $rendered-io.spurt($rdp.finalise);
+        $rdp.file-data{$language}{$short}{ .key } = .value for %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>
-        );
-    }
-    method store( %dict, $fn ) {
-        my $pretty = PrettyDump.new;
-        my $pair-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            [~]
-                '｢', $ds.key, '｣',
-                ' => ',
-                $pretty.dump: $ds.value, :depth(0)
-
-            };
-
-        my $hash-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            my $longest-key = $ds.keys.max: *.chars;
-            my $template = "%-{2+$depth+1+$longest-key.chars}s => %s";
-
-            my $str = do {
-                if @($ds).keys {
-                    my $separator = [~] $pretty.pre-separator-spacing, ',', $pretty.post-separator-spacing;
-                    [~]
-                        $pretty.pre-item-spacing,
-                        join( $separator,
-                            grep { $_ ~~ Str:D },
-                            map {
-                                /^ \t* '｢' .*? '｣' \h+ '=>' \h+/
-                                    ??
-                                sprintf( $template, .split: / \h+ '=>' \h+  /, 2 )
-                                    !!
-                                $_
-                                },
-                            map { $pretty.dump: $_, :depth($depth+1) }, $ds.pairs
-                            ),
-                        $pretty.post-item-spacing;
-                    }
-                else {
-                    $pretty.intra-group-spacing;
-                    }
-                }
-
-            "\{$str}"
-            }
-        $pretty.add-handler: 'Pair', $pair-code;
-        $pretty.add-handler: 'Hash', $hash-code;
-        $fn.IO.spurt: $pretty.dump(%dict);
+        ).pairs;
     }
 }
 
@@ -248,7 +353,7 @@ proto sub MAIN(|) is export {*}
 
 multi sub MAIN(
     :$config = 'config', #| local config file
-    Bool :$install!,     #| install a config directory (if absent) from default values
+    Bool :install($)!,     #| install a config directory (if absent) from default values
 ) {
     my $path = $config.IO.mkdir;
     my $resource;
@@ -290,27 +395,6 @@ multi sub MAIN(
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
     %config<with-only> = $_ with $with-only; # only over-ride if set
-    my $rdp = RakuDoc::To::HTML.new.rdp;
-    $rdp.debug( $debug );
-    $rdp.verbose( $verbose );
-    $rdp.add-plugins( 'RakuDoc::Plugin::HTML::' «~« %config<rakuast-rakudoc-plugins>.list );
-    $rdp.add-plugins( 'Elucid8::Plugin::HTML::' «~« %config<plugins>.list );
-    # for each plugin, check whether there are plugin-options for the plugin
-    # add them to the work-space
-    for $rdp.templates.data.keys -> $wkspc {
-        next unless %config<plugin-options>{$wkspc}:exists;
-        for %config<plugin-options>{$wkspc}.kv { $rdp.templates.data{$wkspc}{ $^a } = $^b }
-    }
-    my @reserved = <ui-tokens css css-link js js-link>;
-    # run the scss to css conversion after all plugins have been enabled
-    # makes SCSS position independent
-    if $rdp.templates.data<SCSS>:exists {
-        $rdp.templates.data<SCSS><run-sass>.( $rdp )
-    }
-    else { $rdp.gather-flatten( 'css', :@reserved) }
-    $rdp.templates.data<UISwitcher><gather-ui-tokens>.( $rdp, %config );
-    $rdp.templates.data<UISwitcher><add-languages>.( %config );
-    $rdp.gather-flatten(<css-link js-link js>, :@reserved );
-    my Elucid8::Engine $engine .= new(:$rdp, :%config, :$f );
+    my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose );
     $engine.process-all
 }

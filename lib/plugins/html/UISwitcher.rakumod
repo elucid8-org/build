@@ -5,6 +5,9 @@ use JSON::Fast;
 use PrettyDump;
 
 unit class Elucid8::Plugin::HTML::UISwitcher;
+has Str $!dictionary = '';
+has Str $!canonical = 'en';
+has %!dict;
 has %.config =
     :name-space<UISwitcher>,
 	:version<0.1.0>,
@@ -15,14 +18,12 @@ has %.config =
     :ui-tokens( %( :UI_Switch<Switch UI>, :LangName<English>)),
     :gather-ui-tokens( -> $rdp, %config { self.create-dictionary( $rdp, %config )}),
     :add-languages( -> %config { self.add-languages( %config ) } ),
+    :%!dict,
 ;
-has Str $!dictionary = '';
-has Str $!canonical = 'en';
-has %!dict;
 
 method enable( RakuDoc::Processor:D $rdp ) {
     $rdp.add-data( %!config<name-space>, %!config );
-    $rdp.add-template( self.templates, :source<UISwitcher plugin>);
+    $rdp.add-template( self.ui-token-template, :source<UISwitcher plugin>);
 }
 method add-languages( %config ) {
     %config<language-list> = %!dict.pairs.map({ .key => .value<LangName> }).hash
@@ -41,12 +42,14 @@ method create-dictionary( $rdp, %config ) {
     if @new-keys.elems {
         # Note we are only interested in new keys, not in values on file, which may be edited
         %!dict{ %config<canonical> }{ $_ } = %ui-tokens{ $_ } for @new-keys;
-        self.store( %!dict, $dict-fn);
+            note 'New UI language tokens detected: ', @new-keys.join(', ');
+        $rdp.store( %!dict, %config<L10N> ~ '/ui-dictionary.rakuon' )
     }
     # collapse & convert to Str and evaluate closures
     use MONKEY-SEE-NO-EVAL;
+    my %evaled;
     for %!dict.kv -> $k, %v {
-        %!dict{ $k } = %v.pairs.map({
+        %evaled{ $k } = %v.pairs.map({
             .key => .value ~~ /^ 'eval' (.+) $/ ??
             EVAL(~$/[0])
             !! .value
@@ -54,61 +57,18 @@ method create-dictionary( $rdp, %config ) {
     }
     no MONKEY-SEE-NO-EVAL;
     # add _keys field
-    $!dictionary = JSON::Fast::to-json( %!dict );
+    $!dictionary = JSON::Fast::to-json( %evaled );
     $!canonical = %config<canonical>;
     %d<UISwitcher><js>.push: [ qq:to/SCRIPT/, 1 ];
-    /* UISwitcher generated vars */
-    var dictionary = $!dictionary;
-    var def_canon = '$!canonical';
-    SCRIPT
+        /* UISwitcher generated vars */
+        var dictionary = $!dictionary;
+        var def_canon = '$!canonical';
+        SCRIPT
 }
-method templates {
+method ui-token-template {
     ui-switch-contents => -> %prm, $tmpl {
         qq[ <ul id="Elucid8_ui-switch-contents" class="%prm<classes>"></ul> ]
     }
-}
-method store( %dict, $fn ) {
-    my $pretty = PrettyDump.new;
-    my $pair-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-        [~]
-            '｢', $ds.key, '｣',
-            ' => ',
-            $pretty.dump: $ds.value, :depth(0)
-
-        };
-
-    my $hash-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-        my $longest-key = $ds.keys.max: *.chars;
-        my $template = "%-{2+$depth+1+$longest-key.chars}s => %s";
-
-        my $str = do {
-            if @($ds).keys {
-                my $separator = [~] $pretty.pre-separator-spacing, ',', $pretty.post-separator-spacing;
-                [~]
-                    $pretty.pre-item-spacing,
-                    join( $separator,
-                        grep { $_ ~~ Str:D },
-                        map {
-                            /^ \t* '｢' .*? '｣' \h+ '=>' \h+/
-                                ??
-                            sprintf( $template, .split: / \h+ '=>' \h+  /, 2 )
-                                !!
-                            $_
-                            },
-                        map { $pretty.dump: $_, :depth($depth+1) }, $ds.pairs
-                        ),
-                    $pretty.post-item-spacing;
-                }
-            else {
-                $pretty.intra-group-spacing;
-                }
-            }
-
-        "\{$str}"
-        }
-    $pretty.add-handler: 'Pair', $pair-code;
-    $pretty.add-handler: 'Hash', $hash-code;
-    $fn.IO.spurt: $pretty.dump(%dict);
 }
 method js-text {
     q:to/SCRIPT/;

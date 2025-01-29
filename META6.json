@@ -1,7 +1,7 @@
 {
   "name": "Elucid8::Build",
   "description": "Renders RakuDoc sources in multiple languages to web site",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "authors": [
     "Richard Hainsworth"
   ],
@@ -9,18 +9,19 @@
   "depends": [
     "Rakuast::RakuDoc::Render",
     "RakuConfig",
-    "PrettyDump"
+    "PrettyDump",
+    "File::Directory::Tree"
   ],
   "test-depends": [
     "Test",
-    "Test::META",
-    "File::Directory::Tree"
+    "Test::META"
   ],
   "provides": {
     "Elucid8-Build": "lib/Elucid8-Build.rakumod",
     "Elucid8::Plugin::HTML::UISwitcher": "lib/plugins/html/UISwitcher.rakumod",
     "Elucid8::Plugin::HTML::Raku-Doc-Website": "lib/plugins/html/Raku-doc-website.rakumod",
-    "Elucid8::Plugin::HTML::AutoIndex": "lib/plugins/html/AutoIndex.rakumod"
+    "Elucid8::Plugin::HTML::AutoIndex": "lib/plugins/html/AutoIndex.rakumod",
+    "Elucid8::Plugin::HTML::SiteData": "lib/plugins/html/SiteData.rakumod"
   },
   "resources": [
     "config/01-base.raku",

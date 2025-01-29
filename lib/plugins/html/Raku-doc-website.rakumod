@@ -367,20 +367,21 @@ method templates {
                 PStr.new: ''
             }
         },
-        #| renders a single item in the index, but only if it has a non-heading ref
+        #| renders a single item in the index
         index-item => -> %prm, $tmpl {
+        # expecting a level, and entry name, whether its in a heading, and
+        # a list (possibly empty) of hashes with information for link(s)
             my $n = %prm<level>;
-            my @refs = %prm<refs>.grep(*.isa(Hash)).grep( *.<is-in-heading>.not ).map({
-                    qq[<a class="raku-webs index-ref" href="#{ .<target> }">{ $tmpl.globals.escape.( .<place> ) }</a>]
+            my $rv =  qq[<div class="raku-webs index-section" data-index-level="$n" style="--level:$n">\n] ~
+                    '<span class="index-entry">' ~ %prm<entry> ~ '</span>';
+            %prm<refs>.list
+#                    .grep( .<is-in-heading>.not ) # do not render if in heading
+                .map({
+                    $rv ~= qq[<a class="raku-webs index-ref" href="#{ .<target> }">{
+                        $tmpl('escape-code', %( :contents( .<place> ) ))
+                        }</a>]
                 });
-            if @refs.elems {
-                PStr.new:
-                    qq[<div class="raku-webs index-section" data-index-level="$n" style="--level:$n">\n] ~
-                    '<span class="index-entry">' ~ %prm<entry> ~ '</span>' ~ ': ' ~
-                    @refs.join(' ') ~
-                    "\n</div>\n"
-            }
-            else { Nil }
+            $rv ~= "\n</div>\n";
         },
         #| special template to render the index data structure
         index => -> %prm, $tmpl {
