@@ -2,7 +2,8 @@ use experimental :rakuast;
 use RakuDoc::Render;
 use RakuDoc::Processed;
 use nqp;
-use File::Directory::Tree;
+use PrettyDump;
+use Elucid8-Build;
 
 grammar DefinitionHeading {
     token operator { infix | prefix | postfix | circumfix | postcircumfix | listop }
@@ -52,12 +53,15 @@ class DefinitionHeadingActions {
 }
 class Elucid8::Plugin::HTML::SiteData {
     has %.fd;
+    #| data from file data and refreshed when other files are rendered
+    has %.definitions;
     has %.config =
         :name-space<SiteData>,
         :version<0.1.0>,
         :license<Artistic-2.0>,
         :credit<finanalyst>,
         :authors<finanalyst>,
+        :%!definitions,
         gen-composites => -> $rdp, $lang, $to { self.generate-composites( $rdp, $lang, $to ) },
         initialise => -> $rdp, $lang, $fn, $ast { self.initialise( $rdp, $lang, $fn, $ast ) },
     ;
@@ -100,8 +104,8 @@ class Elucid8::Plugin::HTML::SiteData {
                 }
             }
             else { # check for starting condition
-                my $actions = DefinitionHeadingActions.new;
-                my $signif = DefinitionHeading.parse( $node.Str, :$actions );
+                my DefinitionHeadingActions $actions .= new;
+                my $signif = DefinitionHeading.parse( $node.Str.trim, :$actions );
                 if $signif {
                     %!fd<defns>{ ++$xtr-trgt } = %(
                         :name($actions.dname),
@@ -153,124 +157,115 @@ class Elucid8::Plugin::HTML::SiteData {
     }
     method generate-composites( $rdp, $lang, $to ) {
         #| create a directory for the composites
-        my $prefix = "$to/hashed";
-        mktree $prefix;
+        my $prefix = NAV_DIR;
         #| data register
         my %templates := $rdp.templates;
         #| workspaces
         my %workspc := %templates.data;
         #| get the files by language
         %!fd := $rdp.file-data{ $lang };
+        my %things := %!definitions;
         #| each of the categories we want to group file definitions by
-        my %things = %( routine => {}, syntax => {}, operator => {} );
-        #| url mapping data
+        %things = %( routine => {}, syntax => {}, operator => {} );
+        #| url mapping for HTML server 'external ref' => 'website name'
         my %url-maps;
-        #| aliases for targets
+        #| aliases for targets to be checked for internal link consistency
         my %aliases;
         for %!fd.kv -> $fn, %info {
             next unless %info<defns>.elems;
-            my $src-ref = %info<title> ~ "  ( $lang/$fn )";
+            #| caption to be associated with file name
+            my $src-caption = %info<title> ~ "  ( $fn )";
             for %info<defns>.kv -> $targ-in-fn, %attrs {
                 with %attrs {
                     next unless .<name>:exists; # skip X<> header sections
-                    # counts new-in-string as new
+                    # strip off everything after first space or equivalent
                     my $sh-name = .<name>.subst(/ [ '_' | '-' | '()' ] .* $ /, '');
                     %things{ .<kind> }{ $sh-name }.push: %(
                         :name( .<name> ),
                         :subkind( .<subkind> ),
                         :snip( .<snip> ),
                         :source( "$lang/$fn" ),
-                        :$src-ref,
+                        :$src-caption,
                         :$targ-in-fn,
                     )
                 }
             }
         }
-
-    for %things.kv -> $kind, %defns {
-        for %defns.kv -> $dn, @dn-data {
-            my $mapped-name = "$prefix/" ~ nqp::sha1( "$kind/$dn" );
-            my $fn-name-old = "{ $kind.Str.lc }/{ good-name($dn) }";
-            my $fn-new = "{ $kind.Str.lc }/$dn";
-            my $esc-dn = $dn.subst(/ <-[ a .. z A .. Z 0 .. 9 _ \- \. ~ ]> /,
-                *.encode>>.fmt('%%%02X').join, :g);
-            # special case '.','..','\'
-            $esc-dn ~= '_(as_name)' if $dn eq any( < . .. >);
-            $esc-dn = 'backslash character' if $dn eq '\\';
-            my $url = "{ $kind.Str.lc }/$esc-dn";
-            %url-maps{ $url } = $mapped-name;
-            %url-maps{ $fn-new.subst(/\"/,'\"',:g) } = $mapped-name;
-            %aliases{ $fn-new.subst(/\"/,'\"',:g) } = $url;
-            unless $fn-name-old eq $fn-new {
-                %url-maps{ $fn-name-old.subst(/\"/,'\"',:g) } = $mapped-name;
-                %aliases{ $fn-name-old.subst(/\"/,'\"',:g) } = $url;
-            }
-            my $comp-ast = qq:to/QAST/.AST;
-                =begin rakudoc :kind<{ $kind }>
-                =TITLE {'The ' ~ $dn.trans(qw｢ &lt; &gt; &amp; &quot; ｣ => qw｢ <    >    &   " ｣) ~ " $kind"}
-                =SUBTITLE Combined from primary sources listed below.
-                =end rakudoc
-                QAST
-            my $ast-paras := $comp-ast.rakudoc.head;
-            for @dn-data {
-                $ast-paras.add-paragraph( RakuAST::Doc::Block.from-paragraphs(
-                    :type<head>,
-                    :1level,
-                    :paragraphs( 'In ' ~ .<src-ref> , )
-                ));
-                $ast-paras.add-paragraph( RakuAST::Doc::Paragraph.new(
-                    'See primary docmentation ',
-                    RakuAST::Doc::Markup.new(
-                      :letter<L>,
-                      :atoms('in context'),
-                      :meta( .<source> ~ '#' ~ .<targ-in-fn>  )
-                    ),
-                    ' for ',
-                    RakuAST::Doc::Markup.new(:letter<B>, :atoms( .<subkind> ~ " $dn")),
-                    '.'
-                ));
-                $ast-paras.add-paragraph( .<snip> );
-#                @routines.push: [
-#                    .<subkind>,
-#                    $dn,
-#                    .<source>,
-#                    .<targ-in-fn>
-#                ];
-            }
-            my $com-name = "$mapped-name\.html";
-            my $rv = $rdp.render($comp-ast,:source-data( %(:name('&#x1F916;'), :path('&#x1F916;'), :$lang, :modified(now) )));
-            CATCH {
-                 default {
-                     $*ERR.say: .message;
-                     for .backtrace.reverse {
-                         next if .file.starts-with('SETTING::');
-                         next unless .subname;
-                         $*ERR.say: "  in block {.subname} at {.file} line {.line}";
-                         last if .file.starts-with('NQP::')
+        # generate the composite files
+        for %things.kv -> $kind, %defns {
+            for %defns.kv -> $dn, @dn-data {
+                my $mapped-name = "$prefix/" ~ nqp::sha1( "$lang/$kind/$dn" );
+                my $fn-new = "{ $kind.Str.lc }/$dn";
+                my $esc-dn = $dn.subst(/ <-[ a .. z A .. Z 0 .. 9 _ \- \. ~ ]> /,
+                    *.encode>>.fmt('%%%02X').join, :g);
+                # special case '.','..','\'
+                $esc-dn ~= '_(as_name)' if $dn eq any( < . .. >);
+                $esc-dn = 'backslash character' if $dn eq '\\';
+                my $url = "$lang/{ $kind.Str.lc }/$esc-dn";
+                %url-maps{ $url } = $mapped-name;
+                %url-maps{ $fn-new.subst(/\"/,'\"',:g) } = $mapped-name;
+                %aliases{ $fn-new.subst(/\"/,'\"',:g) } = $url;
+                #| legacy name for old URLs, will not have lang prefix
+                my $fn-name-old = good-name($dn);
+                unless $fn-name-old eq $dn {
+                    $fn-name-old = '/' ~ $kind.Str.lc ~ '/' ~ $fn-name-old.subst(/\"/,'\"',:g);
+                    %url-maps{ $fn-name-old } = $mapped-name;
+                    %aliases{ $fn-name-old } = $url;
+                }
+                #| subtitle variable is attached to file data for search function
+                #| but shortened for actual file SUBTITLE
+                my @sources;
+                my $comp-ast = qq:to/QAST/.AST;
+                    =begin rakudoc :kind<{ $kind }>
+                    =TITLE The $dn $kind
+                    =SUBTITLE Combined from primary sources listed below.
+                    =end rakudoc
+                    QAST
+                my $ast-paras := $comp-ast.rakudoc.head;
+                for @dn-data {
+                    $ast-paras.add-paragraph( RakuAST::Doc::Block.from-paragraphs(
+                        :type<head>,
+                        :1level,
+                        :paragraphs( 'In ' ~ .<src-caption> , ),
+                        :config(%( id => RakuAST::StrLiteral.new($url),  ))
+                    ));
+                    @sources.push: .<source>;
+                    $ast-paras.add-paragraph( RakuAST::Doc::Paragraph.new(
+                        'See primary docmentation ',
+                        RakuAST::Doc::Markup.new(
+                          :letter<L>,
+                          :atoms('in context'),
+                          :meta( .<source> ~ '#' ~ .<targ-in-fn>  )
+                        ),
+                        ' for ',
+                        RakuAST::Doc::Markup.new(:letter<B>, :atoms( .<subkind> ~ " $dn")),
+                        '.'
+                    ));
+                    $ast-paras.add-paragraph( .<snip> );
+                }
+                my $rv = $rdp.render($comp-ast,:source-data( %(:name('&#x1F916;'), :path($url), :$lang, :modified(now) )));
+                CATCH {
+                     default {
+                         $*ERR.say: .message;
+                         for .backtrace.reverse {
+                             next if .file.starts-with('SETTING::');
+                             next unless .subname;
+                             $*ERR.say: "  in block {.subname} at {.file} line {.line}";
+                             last if .file.starts-with('NQP::')
+                         }
                      }
-                 }
+                }
+                "$to/$mapped-name\.html".IO.spurt: $rv;
+                $rdp.file-data{$lang}{$fn-new}{ .key } = .value for %(
+                    title => 'The <b>' ~ $dn.trans(qw｢ &lt; &gt; &amp; &quot; ｣ => qw｢ <    >    &   " ｣) ~ "</b> $kind",
+                    subtitle => 'From: ' ~ @sources.join(', ') ~ '.',
+                    config => %( :$kind, :!index ),
+                    :modified(now),
+                    :composite,
+                ).pairs;
             }
-            $com-name.IO.spurt: $rv
         }
-#        if 'tablemanager' ~~ any( %workspc.keys ) {
-#            my %ns := %workspc<tablemanager>;
-#            %ns<dataset> = {} without %ns<dataset>;
-#            for <syntax routines operators> -> $kind {
-#                %things{ $kind }
-#            }
-    }
-
-#    my %let-ns;
-#    if 'link-error-test' ~~ any( $pp.plugin-datakeys ) {
-#        %let-ns := $pp.get-data('link-error-test');
-#        %let-ns<aliases> = %aliases;
-#    }
-#    if $hash-urls {
-#        'prettyurls'.IO.spurt: %url-maps.fmt("\"\/%s\" \"\/%s\"").join("\n");
-#        @transfers.push: ['assets/prettyurls', 'myself', 'prettyurls'];
-#    }
-#    @transfers
-#    }
-#    }
+        # store the mapped URLs
+        "$prefix/pretty-urls".IO.spurt: %url-maps.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
 }

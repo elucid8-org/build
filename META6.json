@@ -1,7 +1,7 @@
 {
   "name": "Elucid8::Build",
   "description": "Renders RakuDoc sources in multiple languages to web site",
-  "version": "0.5.0",
+  "version": "0.5.2",
   "authors": [
     "Richard Hainsworth"
   ],
@@ -18,15 +18,17 @@
   ],
   "provides": {
     "Elucid8-Build": "lib/Elucid8-Build.rakumod",
-    "Elucid8::Plugin::HTML::UISwitcher": "lib/plugins/html/UISwitcher.rakumod",
-    "Elucid8::Plugin::HTML::Raku-Doc-Website": "lib/plugins/html/Raku-doc-website.rakumod",
     "Elucid8::Plugin::HTML::AutoIndex": "lib/plugins/html/AutoIndex.rakumod",
-    "Elucid8::Plugin::HTML::SiteData": "lib/plugins/html/SiteData.rakumod"
+    "Elucid8::Plugin::HTML::DataTable": "lib/plugins/html/DataTable.rakumod",
+    "Elucid8::Plugin::HTML::Raku-Doc-Website": "lib/plugins/html/Raku-doc-website.rakumod",
+    "Elucid8::Plugin::HTML::SiteData": "lib/plugins/html/SiteData.rakumod",
+    "Elucid8::Plugin::HTML::UISwitcher": "lib/plugins/html/UISwitcher.rakumod"
   },
   "resources": [
     "config/01-base.raku",
     "config/02-plugins.raku",
-    "config/03-plugin-options.raku"
+    "config/03-plugin-options.raku",
+    "ui-dictionary.rakuon"
   ],
   "support": {
     "bugtracker": "https://github.com/elucid8-org/build/issues",

@@ -10,6 +10,7 @@
         Raku-Doc-Website
         AutoIndex
         SiteData
+        DataTable
     >,
     pre-file-render => %(
         SiteData => 'initialise',

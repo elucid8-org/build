@@ -32,12 +32,18 @@ has %.config =
         :TypesText<The core types (classes) available>,
         :Routines<Routines>,
         :RoutinesText<Searchable table of routines>,
+        :Operators<Operators>,
+        :OperatorsText<Searchable table of operators>,
+        :Syntax<Syntax>,
+        :SyntaxText<Searchable table of syntactic terms>,
         :RakuHome«Raku<sup>®</sup>»,
         :RakuHomeText<Home page for community>,
         :Chat<Chat>,
         :ChatText<IRC live chat>,
         :More<More>,
+        :Detail<Detail>,
         :About<About>,
+        :AboutText<About this site>,
         :SiteReport<Report an issue with this site>,
         :DocReport<Report an issue with the documentation content>,
         :License<License>,
@@ -233,14 +239,40 @@ method templates {
 					<span class="Elucid8-ui" data-UIToken="Reference">Reference</span>
 					<span class="tooltiptext Elucid8-ui" data-UIToken="ReferenceText">ReferenceText</span>
                 </a>
-                <a class="navbar-item tooltip" href="/miscellaneous" >
-					<span class="Elucid8-ui" data-UIToken="Misc">Miscellaneous</span>
-					<span class="tooltiptext Elucid8-ui" data-UIToken="MiscText">MiscellaneousText</span>
-                </a>
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                        <span class="Elucid8-ui" data-UIToken="Detail">Detail</span>
+                    </a>
+                    <div id="dropdown-container" class="navbar-dropdown is-rounded">
+                        <a class="navbar-item tooltip" href="/miscellaneous" >
+                            <span class="Elucid8-ui" data-UIToken="Misc">Miscellaneous</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="MiscText">MiscellaneousText</span>
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item tooltip" href="/types" >
+                            <span class="Elucid8-ui" data-UIToken="Types">Types</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="TypesText">TypesText</span>
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item tooltip" href="/all-routines" >
+                            <span class="Elucid8-ui" data-UIToken="Routines">Routines</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="RoutinesText">RoutinesText</span>
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item tooltip" href="/all-syntax" >
+                            <span class="Elucid8-ui" data-UIToken="Syntax">Syntax</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="SyntaxText">SyntaxText</span>
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item tooltip" href="/all-operators" >
+                            <span class="Elucid8-ui" data-UIToken="Operators">Operators</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="OperatorsText">OperatorsText</span>
+                        </a>
+                    </div>
+                </div>
                 <a class="navbar-item tooltip" href="https://raku.org" >
 					<span class="Elucid8-ui" data-UIToken="RakuHome"></span>
 					<span class="tooltiptext Elucid8-ui" data-UIToken="RakuHomeText">RakuHomeText</span>
-
                 </a>
                 <div class="navbar-item has-dropdown is-hoverable">
                     <a class="navbar-link">
@@ -253,18 +285,9 @@ method templates {
                             </button>
                         </div>
                         <hr class="navbar-divider">
-                        <a class="navbar-item" href="/about">
+                        <a class="navbar-item tooltip" href="/about">
                             <span class="Elucid8-ui" data-UIToken="About">About</span>
-                        </a>
-                        <hr class="navbar-divider">
-                        <a class="navbar-item tooltip" href="/types" >
-                            <span class="Elucid8-ui" data-UIToken="Types">Types</span>
-                            <span class="tooltiptext Elucid8-ui" data-UIToken="TypesText">TypesText</span>
-                        </a>
-                        <hr class="navbar-divider">
-                        <a class="navbar-item tooltip" href="/routines" >
-                            <span class="Elucid8-ui" data-UIToken="Routines">Routines</span>
-                            <span class="tooltiptext Elucid8-ui" data-UIToken="RoutinesText">RoutinesText</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="AboutText">AboutText</span>
                         </a>
                         <hr class="navbar-divider">
                         <a class="navbar-item tooltip" href="https://kiwiirc.com/client/irc.libera.chat/#raku" >
@@ -272,7 +295,7 @@ method templates {
                             <span class="tooltiptext Elucid8-ui" data-UIToken="ChatText">ChatText</span>
                         </a>
                         <hr class="navbar-divider">
-                        <a class="navbar-item has-text-red" href="https://github.com/raku/doc-website/issues">
+                        <a class="navbar-item has-text-red tooltip" href="https://github.com/raku/doc-website/issues">
                             <span class="Elucid8-ui" data-UIToken="SiteReport">SiteReport</span>
                         </a>
                         <hr class="navbar-divider">
@@ -359,7 +382,7 @@ method templates {
         #| special template to render the toc list
         toc => -> %prm, $tmpl {
             if %prm<toc-list>:exists && %prm<toc-list>.elems {
-                PStr.new: qq[<div class="toc">] ~
+                PStr.new: qq[<div class="raku-webs toc">] ~
                 ([~] %prm<toc-list>) ~
                 "</div>\n"
             }
@@ -705,7 +728,7 @@ method raku-webs-scss {
     }
     .tooltip .tooltiptext {
       visibility: hidden;
-      width: 100%;
+      width: 150%;
       background-color: #555;
       color: #fff;
       text-align: center;
@@ -714,8 +737,7 @@ method raku-webs-scss {
       position: absolute;
       z-index: 1;
       top: 125%;
-      right: 0;
-      margin-left: -60px;
+      right: -25%;
       opacity: 0;
       transition: opacity 0.3s;
     }
@@ -844,10 +866,15 @@ method toc-scss {
         position: relative;
     }
     .toc-item {
+	    margin-left: calc(var(--level) * 1rem);
+	    &::before {
+	        content: attr(data-bullet);
+	    }
         &:hover {
             background: var(--bulma-background);
         }
         a {
+            padding-left: 0.4rem;
             text-decoration:none;
             color: var(--bulma-text);
         }

@@ -4,6 +4,8 @@ use RakuConfig;
 use File::Directory::Tree;
 use PrettyDump;
 
+constant NAV_DIR is export = '/assets';
+
 class Elucid8::Processor is HTML::Processor {
     has @.pre-process-callables;
     has @.post-process-callables;
@@ -85,6 +87,10 @@ class Elucid8::Processor is HTML::Processor {
         my $rakuast-block-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
             $pretty.dump: $ds.raku, :depth(0)
         };
+        my $instant-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
+            $pretty.dump: $ds.raku, :depth(0)
+        };
+        $pretty.add-handler: 'Instant', $instant-code;
         $pretty.add-handler: 'Array', $array-code;
         $pretty.add-handler: 'List', $list-code;
         $pretty.add-handler: 'Pair', $pair-code;
@@ -196,15 +202,19 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my $content-changed = self.render-contents( $!canonical, @canon-changes, :canon );
         if $content-changed {
             .( $!rdp, $!canonical, $!to ) for @!post-all-content-files;
-            self.render-glues( $!canonical, @canon-changes, :canon );
         }
+        # this order is needed to trap changes in glues source with no change in content
+        # first force function to run, then conserve what was in content change if True
+        $content-changed = self.render-glues( $!canonical, @canon-changes, :canon )
+            || $content-changed;
         for @!derived-langs -> $dl {
-            my $dl-content-changed = self.render-contents( $dl, @canon-changes );
-            $content-changed ||= $dl-content-changed;
+            $content-changed = self.render-contents( $dl, @canon-changes )
+                || $content-changed;
             if $content-changed {
-                .( $!rdp, $dl, $!to ) for @!post-all-content-files;
-                self.render-glues( $dl, @canon-changes );
+                .( $!rdp, $dl, $!to ) for @!post-all-content-files
             }
+            $content-changed = self.render-glues( $dl, @canon-changes )
+                || $content-changed;
         }
         if $content-changed {
             self.landing-page;
@@ -236,29 +246,32 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         $changes
     }
 
-    method render-glues( $lang, @canon-changes, Bool :$canon = False --> Array ) {
+    method render-glues( $lang, @canon-changes, Bool :$canon = False --> Bool ) {
         # render all glues if content changed.
         # TODO add dependency logic to only render glues if dependent content changed
         my $rdp := $!rdp;
+        my Bool $changes = @canon-changes.elems > 0;
+        # glue files typically have =ListFiles blocks
+        my %listf := $rdp.templates.data<listfiles>;
+        %listf<meta> = $rdp.file-data{$lang};
         for %!sources{ $lang }.pairs
             .grep({ any( %!glues.keys>>.starts-with( .key ) ) })
             .sort({ %!glues{ .key } }) # ensures that the order is according to the render order of glues
             .hash.kv
             -> $short, %info
             {
-            my %listf := $rdp.templates.data<listfiles>;
-            %listf<meta> = $rdp.file-data{$lang};
             with $short.IO.dirname { mktree "$!to/$lang/$_" unless "$!to/$lang/$_".IO ~~ :e & :d }
             my $rendered-io = "$!to/$lang/$short\.html".IO;
-            my $do-file = $!f
-                        || ($rdp.file-data{$lang}{$short}:!exists)
-                        || !$rendered-io.f
-                        || %info<modified> > $rendered-io.modified
-                        || ( $canon.not and $short (elem) @canon-changes )
+            my $do-file = $!f                        # force flag is set
+                        || $changes                  # a lower order glue file has been changed
+                        || ($rdp.file-data{$lang}{$short}:!exists) # the file has not be rendered before
+                        || !$rendered-io.f           # the rendered file does not exist
+                        || %info<modified> > $rendered-io.modified # rendered file is older than source
                         ;
             self.render-file($short, %info, $rendered-io) if $do-file;
-            @canon-changes.push($short) if $canon and $do-file;
+            $changes ||= $do-file
         }
+        $changes
     }
     #| create the website landing page, generate each time
     #| file data contains all rendered files
@@ -344,7 +357,8 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         $rdp.file-data{$language}{$short}{ .key } = .value for %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
-            config => $processed.source-data<rakudoc-config>
+            config => $processed.source-data<rakudoc-config>,
+            modified => %info<modified>,
         ).pairs;
     }
 }
@@ -365,7 +379,7 @@ multi sub MAIN(
     my %options = get-config(:$path);
     # create the necessary directory structure from the config
     mktree %options<L10N>;
-    mktree %options<sources> ~ '/' ~ %options<canonical>
+    mktree %options<sources> ~ '/' ~ %options<canonical>;
 }
 
 multi sub MAIN(
@@ -395,6 +409,13 @@ multi sub MAIN(
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
     %config<with-only> = $_ with $with-only; # only over-ride if set
+    # created deprecated url map
+    unless (%config<destination> ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
+    # create the server-centric files for Caddy by default
+        mktree %config<destination> ~ NAV_DIR;
+        (%config<destination> ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
+            %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
+    }
     my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose );
     $engine.process-all
 }

@@ -21,4 +21,9 @@
                             #| the files are in the form :filename( n ), where n >= 1
                             #| n is rendered before n+1
         } ),
+    :deprecated( %(         #| mapping of deprecated urls to
+                            #| newer equivalents
+                            #| it will be server centric
+         )
+    ),
 )
