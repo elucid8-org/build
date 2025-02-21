@@ -11,14 +11,16 @@
         AutoIndex
         SiteData
         DataTable
+        Search
     >,
-    pre-file-render => %(
+    pre-file-render => (# sequence not hash because order can matter
         SiteData => 'initialise',
     ),
-    post-file-render => %(
+    post-file-render => (# sequence not hash because order can matter
 #        SiteData => 'extract-snippets',
     ),
-    post-all-content-files => %(
+    post-all-content-files => (# sequence not hash because order can matter
         SiteData => 'gen-composites',
+        Search => 'prepare-search-data',
     )
 )

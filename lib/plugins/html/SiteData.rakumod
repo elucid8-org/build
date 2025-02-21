@@ -87,30 +87,36 @@ class Elucid8::Plugin::HTML::SiteData {
         for $ast.rakudoc.head.paragraphs.list -> $node {
             my Bool $is-head = ($node ~~ RakuAST::Doc::Block) && ($node.type eq 'head');
             next unless $consuming || $is-head ;
-            if $consuming {
-                # check for end consuming condition
-                if $is-head && $node.level <= $level {
-                    $consuming = False;
-                    $level = 0;
-                    %!fd<defns>{$xtr-trgt}<snip> = $snippet;
-                }
-                else {
-                    if $is-head {
+                # 1. consuming, not is-head -> add to snip X
+                # 2. not consuming, is-head
+                # 2a head is signif -> start consuming, add to snip
+                # 2b head not signif -> ignore
+                # 3 consuming & is-head
+                # 3a head.level > start -> change head.level, add to snip, continue
+                # 3b head.level <= start -> stop consuming, end snip
+                # 3b1 head is signif -> start consuming, add to snip
+                # 3b2 head is not signif -> ignore
+            if $is-head {
+                if $consuming {
+                    # check for end consuming condition
+                    if $node.level <= $level {
+                        $consuming = False;
+                        $level = 0;
+                        %!fd<defns>{$xtr-trgt}<snip> = $snippet;
+                    }
+                    else {
                         my $n-head = $node.clone;
                         $n-head.set-level( $n-head.level - $level + 1 ); # change the heading level
                         $snippet.add-paragraph( $n-head )
                     }
-                    else { $snippet.add-paragraph( $node.clone ) }
                 }
-            }
-            else { # check for starting condition
                 my DefinitionHeadingActions $actions .= new;
                 my $signif = DefinitionHeading.parse( $node.Str.trim, :$actions );
-                if $signif {
-                    %!fd<defns>{ ++$xtr-trgt } = %(
-                        :name($actions.dname),
-                        :kind($actions.dkind),
-                        :subkind($actions.dsubkind),
+                if ! $consuming && $signif { # check for starting condition
+                        %!fd<defns>{ ++$xtr-trgt } = %(
+                            :name($actions.dname),
+                            :kind($actions.dkind),
+                            :subkind($actions.dsubkind),
                     );
                     my $n-head = $node.clone;
                     $n-head.set-level(2) ; # change the heading level
@@ -119,9 +125,12 @@ class Elucid8::Plugin::HTML::SiteData {
                     $level = $node.level;
                 }
             }
+            else {
+                $snippet.add-paragraph( $node.clone ) if $consuming
+            }
         }
         # add last snip in file if snip runs to end of file
-        %!fd<defns><$xtr-t><snip> = $snippet if $consuming;
+        %!fd<defns>{$xtr-trgt}<snip> = $snippet if $consuming;
     }
 
     #| originally, Raku documentation was generated using Documentable
@@ -156,12 +165,9 @@ class Elucid8::Plugin::HTML::SiteData {
         $name;
     }
     method generate-composites( $rdp, $lang, $to ) {
+        say 'Generating composites';
         #| create a directory for the composites
         my $prefix = NAV_DIR;
-        #| data register
-        my %templates := $rdp.templates;
-        #| workspaces
-        my %workspc := %templates.data;
         #| get the files by language
         %!fd := $rdp.file-data{ $lang };
         my %things := %!definitions;
@@ -194,7 +200,7 @@ class Elucid8::Plugin::HTML::SiteData {
         # generate the composite files
         for %things.kv -> $kind, %defns {
             for %defns.kv -> $dn, @dn-data {
-                my $mapped-name = "$prefix/" ~ nqp::sha1( "$lang/$kind/$dn" );
+                my $mapped-name = "/$prefix/" ~ nqp::sha1( "$lang/$kind/$dn" );
                 my $fn-new = "{ $kind.Str.lc }/$dn";
                 my $esc-dn = $dn.subst(/ <-[ a .. z A .. Z 0 .. 9 _ \- \. ~ ]> /,
                     *.encode>>.fmt('%%%02X').join, :g);
@@ -261,11 +267,11 @@ class Elucid8::Plugin::HTML::SiteData {
                     subtitle => 'From: ' ~ @sources.join(', ') ~ '.',
                     config => %( :$kind, :!index ),
                     :modified(now),
-                    :composite,
+                    :type<composite>,
                 ).pairs;
             }
         }
         # store the mapped URLs
-        "$prefix/pretty-urls".IO.spurt: %url-maps.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
+        "$to/$prefix/prettyurls".IO.spurt: %url-maps.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
 }

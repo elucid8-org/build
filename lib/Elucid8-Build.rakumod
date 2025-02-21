@@ -4,7 +4,7 @@ use RakuConfig;
 use File::Directory::Tree;
 use PrettyDump;
 
-constant NAV_DIR is export = '/assets';
+constant NAV_DIR is export = 'assets';
 
 class Elucid8::Processor is HTML::Processor {
     has @.pre-process-callables;
@@ -135,20 +135,20 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             for %!config<plugin-options>{$wkspc}.kv { %d{$wkspc}{ $^a } = $^b }
         }
         # set up the pre and post content callables
-        for %!config<pre-file-render>.kv -> $wkspc, $callable {
+        for %!config<pre-file-render>.list -> ( :key($wkspc), :value($callable) ) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
                 unless %d{$wkspc}{$callable} ~~ Callable;
             $!rdp.pre-process-callables.push: %d{$wkspc}{$callable}
         }
-        for %!config<post-file-render>.kv -> $wkspc, $callable {
+        for %!config<post-file-render>.list -> ( :key($wkspc), :value($callable) ) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
                 unless %d{$wkspc}{$callable} ~~ Callable;
             $!rdp.post-process-callables.push: %d{$wkspc}{$callable}
         }
-        for %!config<post-all-content-files>.kv -> $wkspc, $callable {
+        for %!config<post-all-content-files>.list -> ( :key($wkspc), :value($callable) ) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
                 unless %d{$wkspc}{$callable} ~~ Callable;
-            @!post-all-content-files.push: %d{$wkspc}{$callable}
+            @!post-all-content-files.push: %d{$wkspc}{$callable};
         }
         my @reserved = <ui-tokens css css-link js js-link>;
         # run the scss to css conversion after all plugins have been enabled
@@ -239,6 +239,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                              || %info<modified> > $rendered-io.modified
                              || ( $canon.not and $short (elem) @canon-changes )
                              ;
+            %info<type> = 'primary';
             self.render-file($short, %info, $rendered-io) if $do-file;
             @canon-changes.push( $short ) if $canon and $do-file;
             $changes ||= $do-file
@@ -268,6 +269,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                         || !$rendered-io.f           # the rendered file does not exist
                         || %info<modified> > $rendered-io.modified # rendered file is older than source
                         ;
+            %info<type> = 'glue';
             self.render-file($short, %info, $rendered-io) if $do-file;
             $changes ||= $do-file
         }
@@ -335,7 +337,8 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
-            lang => $!canonical
+            lang => $!canonical,
+            :type<glue>,
         );
     }
 
@@ -359,6 +362,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
             modified => %info<modified>,
+            type => %info<type>,
         ).pairs;
     }
 }
@@ -366,7 +370,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
 proto sub MAIN(|) is export {*}
 
 multi sub MAIN(
-    :$config = 'config', #| local config file
+    :$config = 'config', #| localised config file
     Bool :install($)!,     #| install a config directory (if absent) from default values
 ) {
     my $path = $config.IO.mkdir;
@@ -390,7 +394,7 @@ multi sub MAIN(
 };
 
 multi sub MAIN(
-    :$config = 'config',      #| local config file
+    :$config = 'config',      #| localised config file
     Bool :force(:$f) = False, #| force complete rendering, otherwise only modified
     Str :$debug = 'None',     #| RakuAST-RakuDoc-Render debug list
     Str :$verbose = '',       #| RakuAST-RakuDoc-Render verbose parameter
@@ -410,10 +414,10 @@ multi sub MAIN(
     }
     %config<with-only> = $_ with $with-only; # only over-ride if set
     # created deprecated url map
-    unless (%config<destination> ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
+    unless (%config<destination> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
     # create the server-centric files for Caddy by default
-        mktree %config<destination> ~ NAV_DIR;
-        (%config<destination> ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
+        mktree %config<destination> ~ '/' ~ NAV_DIR;
+        (%config<destination> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
             %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
     my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose );

@@ -44,7 +44,9 @@ has %.config =
         :Detail<Detail>,
         :About<About>,
         :AboutText<About this site>,
+        :SiteIssue<Site problem>,
         :SiteReport<Report an issue with this site>,
+        :DocIssue<Content problem>,
         :DocReport<Report an issue with the documentation content>,
         :License<License>,
     )
@@ -53,7 +55,7 @@ method enable( RakuDoc::Processor:D $rdp ) {
     $rdp.add-templates( $.templates, :source<Raku-doc-website plugin> );
     $rdp.add-data( %!config<name-space>, %!config );
 }
-#    { %tml<cancel-announcement-popup>.( {}, {} ) }
+
 method templates {
     %(
         final => -> %prm, $tmpl {
@@ -163,7 +165,7 @@ method templates {
                     <nav class="panel is-hidden-tablet" id="mobile-nav">
                       <div class="panel-block">
                         <p class="control has-icons-left">
-                          <input class="input" type="text" placeholder="Search" id="mobile-nav-search"/>
+                          <input class="input" type="text" placeholder="🔍" id="mobile-nav-search"/>
                           <span class="icon is-left">
                             <i class="fas fa-search" aria-hidden="true"></i>
                           </span>
@@ -187,7 +189,6 @@ method templates {
                         </aside>
                     </nav>
                 </div>
-            </nav>
             BLOCK
         },
         #| Toc/Index floats below navbar except for mobile
@@ -195,11 +196,11 @@ method templates {
            ( %prm<source-data><rakudoc-config><toc>:exists
             && %prm<source-data><rakudoc-config><toc>.not )
             ?? '' !!
-            qq:to/SIDEBAR/;
+            qq:to/PAGENAV/;
             <nav class="raku-webs panel is-hidden-mobile" id="page-nav">
               <div class="panel-block">
                 <p class="control has-icons-left">
-                  <input class="input" type="text" id="page-nav-search"/>
+                  <input class="input" type="text" placeholder="🔍" id="page-nav-search"/>
                   <span class="icon is-left">
                     <i class="fas fa-search" aria-hidden="true"></i>
                   </span>
@@ -222,17 +223,22 @@ method templates {
                 }
                 </aside>
             </nav>
-            SIDEBAR
+            <div id="modal-container">
+                { $tmpl<search-modal> # provided by a search plugin
+           }
+            </div>
+            PAGENAV
         },
         'site-navigation' => -> %prm, $tmpl {
             qq:to/BLOCK/
             <div id="navMenu" class="navbar-menu">
                 <div class="navbar-start navbar-item is-hidden-touch"></div> <!-- empty item so remainder are centered -->
                 <div class="navbar-start navbar-item is-hidden-desktop">{ $tmpl<head-search> }</div> <!-- move position of search with hamburger on -->
+            BLOCK
+            ~ q:to/BLOCK/
                 <a class="navbar-item tooltip" href="/introduction">
                     <span class="Elucid8-ui" data-UIToken="Intro">Intro</span>
-                    <span class="tooltiptext">
-                    <span class="Elucid8-ui" data-UIToken="IntroText">IntroText</span>
+                    <span class="tooltiptext Elucid8-ui" data-UIToken="IntroText">IntroText</span>
                     </span>
                 </a>
                 <a class="navbar-item tooltip" href="/reference" >
@@ -243,7 +249,7 @@ method templates {
                     <a class="navbar-link">
                         <span class="Elucid8-ui" data-UIToken="Detail">Detail</span>
                     </a>
-                    <div id="dropdown-container" class="navbar-dropdown is-rounded">
+                    <div class="navbar-dropdown is-rounded">
                         <a class="navbar-item tooltip" href="/miscellaneous" >
                             <span class="Elucid8-ui" data-UIToken="Misc">Miscellaneous</span>
                             <span class="tooltiptext Elucid8-ui" data-UIToken="MiscText">MiscellaneousText</span>
@@ -278,7 +284,7 @@ method templates {
                     <a class="navbar-link">
                         <span class="Elucid8-ui" data-UIToken="More">More</span>
                     </a>
-                    <div id="dropdown-container" class="navbar-dropdown is-rounded">
+                    <div class="navbar-dropdown is-rounded">
                         <div class="navbar-item">
                             <button id="changeTheme" class="button">
                                 <span class="Elucid8-ui" data-UIToken="ChangeTheme">ChangeTheme</span>
@@ -296,30 +302,36 @@ method templates {
                         </a>
                         <hr class="navbar-divider">
                         <a class="navbar-item has-text-red tooltip" href="https://github.com/raku/doc-website/issues">
-                            <span class="Elucid8-ui" data-UIToken="SiteReport">SiteReport</span>
+                            <span class="Elucid8-ui" data-UIToken="SiteIssue">SiteIssue</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="SiteReport">SiteReport</span>
                         </a>
                         <hr class="navbar-divider">
-                        <a class="navbar-item" href="https://github.com/raku/doc/issues">
-                            <span class="Elucid8-ui" data-UIToken="DocReport">DocReport</span>
+                        <a class="navbar-item tooltip" href="https://github.com/raku/doc/issues">
+                            <span class="Elucid8-ui" data-UIToken="DocIssue">DocIssue</span>
+                            <span class="tooltiptext Elucid8-ui" data-UIToken="DocReport">DocReport</span>
                         </a>
                     </div>
                 </div>
+            BLOCK
+            ~ qq:to/BLOCK/
                 <div class="navbar-item has-dropdown is-hoverable" id="Elucid8_choice">
                     <a class="navbar-link"><span class="Elucid8-ui" data-UIToken="UI_Switch">UI_Switch</span></a>
                     { # this is provided by the UISwitcher plugin
                         $tmpl('ui-switch-contents', %(:classes<navbar-dropdown>))
                     }
                 </div>
-                <div class="navbar-end navbar-item is-hidden-touch"> <!-- move to top -->
+                <div class="navbar-end navbar-item is-hidden-touch"> <!-- move to top when touch on -->
                     { # provided by a search plugin
                         $tmpl<head-search>
                     }
                 </div>
-            <div id="modal-container"></div>
+            </div>
             BLOCK
         },
         # place-holders
         'head-search' => -> %, $ { 'No search function' },
+        'search-modal' => -> %, $ { '' },
+        'notification-modal' => -> %, $ { '' },
         #| the main section of body
         main-content => -> %prm, $tmpl {
             if %prm<source-data><rakudoc-config><direct-wrap>:exists && %prm<source-data><rakudoc-config><direct-wrap>
@@ -423,7 +435,7 @@ method templates {
                 <div class="container px-4">
                     <nav class="level">
                         <div class="level-item">
-                            <span class="Elucid8-ui" data-UIToken="FileSource">Source</span><br><span class="footer-field">{%prm<source-data><name>}
+                            <span class="Elucid8-ui" data-UIToken="FileSource">Source</span><br><span class="footer-field">{%prm<source-data><name>}</span>
                         </div>
                         <div class="level-item">
                             <span class="Elucid8-ui" data-UIToken="Time">Time</span>
@@ -890,5 +902,10 @@ method bulma-additions-scss {
     // .content p:not( ol.item-list ) { margin-bottom: 0; }
     .delta:hover { border: var(--bulma-border-hover) 1px solid; }
     .navbar-start { margin-bottom: 1rem; }
+    #modal-container {
+        position: sticky;
+        top: var(--bulma-navbar-height);
+        z-index: 30;
+    }
     GENERAL
 }

@@ -44,15 +44,11 @@ method templates {
                 my $options = JSON::Fast::to-json( %table-options );
                 my $js = qq:to/JS/;
                         <script>
-                        let options = \{
-                        searchable: true,
-                        fixedHeight: true
-                        \};
-                        let dataTable = new simpleDatatables.DataTable("#$table-id", options);
+                        let dataTable = new simpleDatatables.DataTable("#$table-id", $options);
                         </script>
                     JS
                 $rv ~= qq:to/TABLE/;
-                        <table id="$table-id" class="elucid8-datatable table">
+                        <table id="$table-id" class="elucid8-datatable table is-striped is-bordered is-hoverable">
                         <thead>
                         <tr><th>{ %prm<header1> // 'Type'}\</th><th>{ %prm<header2> // 'Name' }\</th><th>{ %prm<header3> // 'Described in'}\</th>\</tr>
                         </thead>
