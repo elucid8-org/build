@@ -4,6 +4,7 @@ use RakuDoc::Processed;
 use nqp;
 use PrettyDump;
 use Elucid8-Build;
+use File::Directory::Tree;
 
 grammar DefinitionHeading {
     token operator { infix | prefix | postfix | circumfix | postcircumfix | listop }
@@ -68,6 +69,7 @@ class Elucid8::Plugin::HTML::SiteData {
 
     method enable( RakuDoc::Processor:D $rdp ) {
         $rdp.add-data( %!config<name-space>, %!config );
+        $rdp.add-template( self.site-template, :source<SiteData plugin>);
     }
     #| routine is only called for files that are being rendered
     #| data from files not rendered - if any - is kept
@@ -118,8 +120,13 @@ class Elucid8::Plugin::HTML::SiteData {
                             :kind($actions.dkind),
                             :subkind($actions.dsubkind),
                     );
+                    $node.add-config(
+                        'xtr-trgt',
+                        ~$xtr-trgt
+                    );
                     my $n-head = $node.clone;
                     $n-head.set-level(2) ; # change the heading level
+                    $n-head.add-config('Elucid8-composite',True);
                     $snippet = RakuAST::Doc::Block.new( :type<section>, :paragraphs( $n-head, ) );
                     $consuming = True;
                     $level = $node.level;
@@ -131,6 +138,16 @@ class Elucid8::Plugin::HTML::SiteData {
         }
         # add last snip in file if snip runs to end of file
         %!fd<defns>{$xtr-trgt}<snip> = $snippet if $consuming;
+    }
+
+    method site-template {
+        head => -> %prm, $tmpl {
+            if %prm<Elucid8-composite>.not and  %prm<xtr-trgt>:exists {
+                my %fd := $tmpl.globals.data<file-data><current>;
+                %fd<defns>{ %prm<xtr-trgt> }<targ-in-fn> = %prm<id> || %prm<target> ||  ''
+            }
+            $tmpl.prev
+        }
     }
 
     #| originally, Raku documentation was generated using Documentable
@@ -167,7 +184,8 @@ class Elucid8::Plugin::HTML::SiteData {
     method generate-composites( $rdp, $lang, $to ) {
         say 'Generating composites';
         #| create a directory for the composites
-        my $prefix = NAV_DIR;
+        my $prefix = "/{ NAV_DIR }/hashed/";
+        mktree $to ~ $prefix;
         #| get the files by language
         %!fd := $rdp.file-data{ $lang };
         my %things := %!definitions;
@@ -181,7 +199,7 @@ class Elucid8::Plugin::HTML::SiteData {
             next unless %info<defns>.elems;
             #| caption to be associated with file name
             my $src-caption = %info<title> ~ "  ( $fn )";
-            for %info<defns>.kv -> $targ-in-fn, %attrs {
+            for %info<defns>.kv -> $xtr-trgt, %attrs {
                 with %attrs {
                     next unless .<name>:exists; # skip X<> header sections
                     # strip off everything after first space or equivalent
@@ -192,7 +210,7 @@ class Elucid8::Plugin::HTML::SiteData {
                         :snip( .<snip> ),
                         :source( "$lang/$fn" ),
                         :$src-caption,
-                        :$targ-in-fn,
+                        :targ-in-fn( .<targ-in-fn> ),
                     )
                 }
             }
@@ -200,14 +218,14 @@ class Elucid8::Plugin::HTML::SiteData {
         # generate the composite files
         for %things.kv -> $kind, %defns {
             for %defns.kv -> $dn, @dn-data {
-                my $mapped-name = "/$prefix/" ~ nqp::sha1( "$lang/$kind/$dn" );
-                my $fn-new = "{ $kind.Str.lc }/$dn";
+                my $mapped-name = $prefix ~ nqp::sha1( "$lang/$kind/$dn" );
+                my $fn-new = "/{ $kind.Str.lc }/$dn";
                 my $esc-dn = $dn.subst(/ <-[ a .. z A .. Z 0 .. 9 _ \- \. ~ ]> /,
                     *.encode>>.fmt('%%%02X').join, :g);
                 # special case '.','..','\'
                 $esc-dn ~= '_(as_name)' if $dn eq any( < . .. >);
                 $esc-dn = 'backslash character' if $dn eq '\\';
-                my $url = "$lang/{ $kind.Str.lc }/$esc-dn";
+                my $url = "/$lang/{ $kind.Str.lc }/$esc-dn";
                 %url-maps{ $url } = $mapped-name;
                 %url-maps{ $fn-new.subst(/\"/,'\"',:g) } = $mapped-name;
                 %aliases{ $fn-new.subst(/\"/,'\"',:g) } = $url;
@@ -232,16 +250,17 @@ class Elucid8::Plugin::HTML::SiteData {
                     $ast-paras.add-paragraph( RakuAST::Doc::Block.from-paragraphs(
                         :type<head>,
                         :1level,
+                        :config(%(:Elucid8-composite,))
                         :paragraphs( 'In ' ~ .<src-caption> , ),
-                        :config(%( id => RakuAST::StrLiteral.new($url),  ))
                     ));
                     @sources.push: .<source>;
+                    my $int-targ =  .<targ-in-fn> ?? ('#' ~ .<targ-in-fn>) !! '';
                     $ast-paras.add-paragraph( RakuAST::Doc::Paragraph.new(
                         'See primary docmentation ',
                         RakuAST::Doc::Markup.new(
                           :letter<L>,
                           :atoms('in context'),
-                          :meta( .<source> ~ '#' ~ .<targ-in-fn>  )
+                          :meta( '/' ~ .<source> ~  $int-targ)
                         ),
                         ' for ',
                         RakuAST::Doc::Markup.new(:letter<B>, :atoms( .<subkind> ~ " $dn")),
@@ -252,7 +271,7 @@ class Elucid8::Plugin::HTML::SiteData {
                 my $rv = $rdp.render($comp-ast,:source-data( %(:name('&#x1F916;'), :path($url), :$lang, :modified(now) )));
                 CATCH {
                      default {
-                         $*ERR.say: .message;
+                         $*ERR.say: "caught in SiteData @ $?LINE  with message: " ~ .message;
                          for .backtrace.reverse {
                              next if .file.starts-with('SETTING::');
                              next unless .subname;
@@ -272,6 +291,6 @@ class Elucid8::Plugin::HTML::SiteData {
             }
         }
         # store the mapped URLs
-        "$to/$prefix/prettyurls".IO.spurt: %url-maps.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
+        "$to/{NAV_DIR}/prettyurls".IO.spurt: %url-maps.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
 }

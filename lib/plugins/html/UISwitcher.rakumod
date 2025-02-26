@@ -49,10 +49,11 @@ method create-dictionary( $rdp, %config ) {
     use MONKEY-SEE-NO-EVAL;
     my %evaled;
     for %!dict.kv -> $k, %v {
-        %evaled{ $k } = %v.pairs.map({
-            .key => .value ~~ /^ 'eval' (.+) $/ ??
-            EVAL(~$/[0])
-            !! .value
+        %evaled{ $k } = %v.pairs
+            .map({
+                .key => .value ~~ /^ 'eval' (.+) $/ ??
+                EVAL(~$/[0])
+                !! .value
         }).hash
     }
     no MONKEY-SEE-NO-EVAL;

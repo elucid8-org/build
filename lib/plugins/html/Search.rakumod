@@ -21,6 +21,7 @@ has %.config =
 	:prepare-search-data( -> $rdp, $lang, $to { self.prepare-search-data( $rdp, $lang, $to ) } ),
     ui-tokens => %(
         :SearchText('Click to open search box'),
+        :SearchCancel('Click to close search box'),
         :Search<Search>,
         :options-search-extra('Extra info'),
         :options-search-extra-tip('The search response can be shortened by excluding the extra information line'),
@@ -96,9 +97,9 @@ method prepare-search-data( $rdp, $lang, $to ) {
         next if %fdata<type> eq 'glue'; # ignore contents of glue files.
         my $value = %fdata<title>;
         my $info = %fdata<subtitle> // '';
-        if %fdata<primary> {
+        if %fdata<type> eq 'primary' {
             @entries.push: %(
-                :category( %fdata<config><subkind>.tc // 'Language' ), # a default subkind in case one is missing.
+                :category( (%fdata<config><subkind> // 'Language').tc ), # a default subkind in case one is missing.
                 :$value,
                 :$info,
                 :url(escape-json("/$lang/$fn")),
@@ -132,7 +133,7 @@ method prepare-search-data( $rdp, $lang, $to ) {
                 :category<Composite>,
                 :$value,
                 :$info,
-                :url(escape-json("/$lang/$fn")),
+                :url(escape-json("/$lang$fn")),
                 :type<composite>,
             )
         }
@@ -168,6 +169,7 @@ method search-templates {
                         <i class="fa fa-search"></i>
                         <span class="Elucid8-ui" data-UIToken="Search">Search</span>
                         <span class="tooltiptext Elucid8-ui" data-UIToken="SearchText">SearchText</span>
+                        <span class="tooltiptext Elucid8-ui cancel" data-UIToken="SearchCancel">SearchCancel</span>
                     </label>
                 </div>
                 BLOCK
@@ -186,53 +188,54 @@ method search-templates {
                     <div class="modal-background"></div>
                     <div class="modal-content">
                         <div class="box">
-                            <p><span class="Elucid8-ui" data-UIToken="options-search-last-candidate">options-search-last-candidate</span>options-search-last-candidate<span id="selected-candidate" class="ss-selected"></span></p>
-                            <div class="control is-grouped is-grouped-centered options-search-controls">
-                                <label class="tooltip centreToggle">
-                                    <span class="Elucid8-ui" data-UIToken="options-search-extra">options-search-extra</span>
+                            <p><span class="Elucid8-ui" data-UIToken="options-search-last-candidate">options-search-last-candidate</span>
+                            <span id="selected-candidate" class="ss-selected"><i class="fa fa-inbox"></i></span></p>
+                            <div class="content is-grouped is-grouped-centered options-search-controls">
+                                <label class="tooltip optionToggle">
+                                    <span class="Elucid8-ui text" data-UIToken="options-search-extra">options-search-extra</span>
                                     <span class="tooltiptext Elucid8-ui" data-UIToken="options-search-extra-tip">options-search-extra-tip</span>
                                     <input id="options-search-extra" type="checkbox">
                                     <span class="Elucid8-ui on" data-UIToken="options-search-extra-on">options-search-extra-on</span>
                                     <span class="Elucid8-ui off" data-UIToken="options-search-extra-off">options-search-extra-off</span>
                                 </label>
-                                <label class="tooltip centreToggle">
-                                    <span class="Elucid8-ui" data-UIToken="options-search-loose">options-search-loose</span>
+                                <label class="tooltip optionToggle">
+                                    <span class="Elucid8-ui text" data-UIToken="options-search-loose">options-search-loose</span>
                                     <span class="tooltiptext Elucid8-ui" data-UIToken="options-search-loose-tip">options-search-loose-tip</span>
                                     <input id="options-search-loose" type="checkbox">
                                     <span class="Elucid8-ui on" data-UIToken="options-search-loose-on">options-search-loose-on</span>
                                     <span class="Elucid8-ui off" data-UIToken="options-search-loose-off">options-search-loose-off</span>
                                 </label>
-                                <label class="tooltip centreToggle">
-                                    <span class="Elucid8-ui" data-UIToken="options-search-headings">options-search-headings</span>
+                                <label class="tooltip optionToggle">
+                                    <span class="Elucid8-ui text" data-UIToken="options-search-headings">options-search-headings</span>
                                     <span class="tooltiptext Elucid8-ui" data-UIToken="options-search-headings-tip">options-search-headings-tip</span>
                                     <input id="options-search-headings" type="checkbox">
                                     <span class="Elucid8-ui on" data-UIToken="options-search-headings-on">options-search-headings-on</span>
                                     <span class="Elucid8-ui off" data-UIToken="options-search-headings-off">options-search-headings-off</span>
                                 </label>
-                                <label class="tooltip centreToggle">
-                                    <span class="Elucid8-ui" data-UIToken="options-search-indexed">options-search-indexed</span>
+                                <label class="tooltip optionToggle">
+                                    <span class="Elucid8-ui text" data-UIToken="options-search-indexed">options-search-indexed</span>
                                     <span class="tooltiptext Elucid8-ui" data-UIToken="options-search-indexed-tip">options-search-indexed-tip</span>
                                     <input id="options-search-indexed" type="checkbox">
                                     <span class="Elucid8-ui on" data-UIToken="options-search-indexed-on">options-search-indexed-on</span>
                                     <span class="Elucid8-ui off" data-UIToken="options-search-indexed-off">options-search-indexed-off</span>
                                 </label>
-                                <label class="tooltip centreToggle">
-                                    <span class="Elucid8-ui" data-UIToken="options-search-composite">options-search-composite</span>
+                                <label class="tooltip optionToggle">
+                                    <span class="Elucid8-ui text" data-UIToken="options-search-composite">options-search-composite</span>
                                     <span class="tooltiptext Elucid8-ui" data-UIToken="options-search-composite-tip">options-search-composite-tip</span>
                                     <input id="options-search-composite" type="checkbox">
                                     <span class="Elucid8-ui on" data-UIToken="options-search-composite-on">options-search-composite-on</span>
                                     <span class="Elucid8-ui off" data-UIToken="options-search-composite-off">options-search-composite-off</span>
                                 </label>
-                                <label class="tooltip centreToggle">
-                                    <span class="Elucid8-ui" data-UIToken="options-search-primary">options-search-primary</span>
+                                <label class="tooltip optionToggle">
+                                    <span class="Elucid8-ui text" data-UIToken="options-search-primary">options-search-primary</span>
                                     <span class="tooltiptext Elucid8-ui" data-UIToken="options-search-primary-tip">options-search-primary-tip</span>
                                     <input id="options-search-primary" type="checkbox">
                                     <span class="Elucid8-ui on" data-UIToken="options-search-primary-on">options-search-primary-on</span>
                                     <span class="Elucid8-ui off" data-UIToken="options-search-primary-off">options-search-primary-off</span>
                                 </label>
-                                <p><span class="Elucid8-ui" data-UIToken="options-search-fallback">options-search-fallback</span></p>
-                                <p><span class="Elucid8-ui" data-UIToken="options-search-escape-text">options-search-escape-text</span></p>
                             </div>
+                            <p><span class="Elucid8-ui" data-UIToken="options-search-fallback">options-search-fallback</span></p>
+                            <p><span class="Elucid8-ui" data-UIToken="options-search-escape-text">options-search-escape-text</span></p>
                         </div>
                     </div>
                     <button class="modal-close is-large" aria-label="close"></button>
@@ -264,128 +267,7 @@ method options-search {
         localStorage.setItem('searchOptions', JSON.stringify( searchOptions ))
     };
 
-     var autoCompleteJS;
-    const debug = [
-        {
-        "type": "composite",
-        "info": "",
-        "value": "404",
-        "category": "Composite",
-        "url": "/en/404"
-        },
-        {
-        "type": "composite",
-        "category": "Composite",
-        "value": "REPL",
-        "info": "Read-eval-print loop",
-        "url": "/en/language/REPL"
-        },
-        {
-        "value": "The <b>$!</b> syntax",
-        "type": "composite",
-        "info": "From: en/language/variables.",
-        "url": "/en/syntax/$!",
-        "category": "Composite"
-        },
-        {
-        "info": "From: en/language/variables.",
-        "url": "/en/syntax/$/",
-        "value": "The <b>$/</b> syntax",
-        "type": "composite",
-        "category": "Composite"
-        },
-        {
-        "value": "The <b>$</b> syntax",
-        "info": "From: en/language/variables.",
-        "url": "/en/syntax/$",
-        "type": "composite",
-        "category": "Composite"
-        },
-        {
-        "value": "The <b>$¢</b> syntax",
-        "url": "/en/syntax/$¢",
-        "category": "Composite",
-        "type": "composite",
-        "info": "From: en/language/variables."
-        },
-        {
-        "category": "Composite",
-        "info": "From: en/language/variables.",
-        "type": "composite",
-        "url": "/en/syntax/anon",
-        "value": "The <b>anon</b> syntax"
-        },
-        {
-        "url": "/en/syntax/augment",
-        "category": "Composite",
-        "info": "From: en/language/variables.",
-        "value": "The <b>augment</b> syntax",
-        "type": "composite"
-        },
-        {
-        "url": "/en/operator/constant",
-        "type": "composite",
-        "category": "Composite",
-        "info": "From: en/language/variables.",
-        "value": "The <b>constant</b> operator"
-        },
-        {
-        "value": "The <b>has</b> syntax",
-        "info": "From: en/language/variables.",
-        "category": "Composite",
-        "url": "/en/syntax/has",
-        "type": "composite"
-        },
-        {
-        "url": "/en/operator/let",
-        "category": "Composite",
-        "type": "composite",
-        "info": "From: en/language/variables.",
-        "value": "The <b>let</b> operator"
-        },
-        {
-        "url": "/en/syntax/my",
-        "category": "Composite",
-        "value": "The <b>my</b> syntax",
-        "info": "From: en/language/variables.",
-        "type": "composite"
-        },
-        {
-        "value": "The <b>our</b> syntax",
-        "category": "Composite",
-        "url": "/en/syntax/our",
-        "info": "From: en/language/variables.",
-        "type": "composite"
-        },
-        {
-        "type": "composite",
-        "category": "Composite",
-        "url": "/en/routine/repl",
-        "info": "From: en/language/REPL.",
-        "value": "The <b>repl</b> routine"
-        },
-        {
-        "value": "The <b>state</b> syntax",
-        "url": "/en/syntax/state",
-        "type": "composite",
-        "info": "From: en/language/variables.",
-        "category": "Composite"
-        },
-        {
-        "type": "composite",
-        "value": "The <b>temp</b> operator",
-        "url": "/en/operator/temp",
-        "category": "Composite",
-        "info": "From: en/language/variables."
-        },
-        {
-        "url": "/en/language/variables",
-        "category": "Composite",
-        "type": "composite",
-        "info": "Variables in Raku",
-        "value": "Variables"
-        }
-    ];
+    var autoCompleteJS;
     var defaultOptions = {
         "loose": false,
         "headings": true,
@@ -403,13 +285,7 @@ method options-search {
         if ( searchOptions == null ) {
             searchOptions  = defaultOptions;
         }
-        document.getElementById('options-search-reset-defaults').addEventListener('click', function () {
-            localStorage.removeItem('searchOptions');
-            searchOptions = defaultOptions;
-            window.location.reload();
-        });
         var selectedCandidate = document.getElementById('selected-candidate');
-        selectedCandidate.innerHTML = 'No page selected';
         var category = '';
         document.querySelectorAll('.Elucid8-search').forEach( ( el ) => {
             el.addEventListener('click', (searchEvent) => {
@@ -426,9 +302,7 @@ method options-search {
                                     data = await source.json();
                                     return data;
                                 } catch (error) {
-                                    //              return error;
-                                    data = debug;
-                                    return debug;
+                                    return error;
                                 }
                             },
                             keys: ['value'],
@@ -555,6 +429,7 @@ method options-search {
                     else {
                         searchBox.classList.remove('is-hidden');
                         searchProcess = true;
+                        document.getElementById('Elucid8_search_input').focus();
                     }
                     el.querySelector('input').checked = searchProcess;
                 }
@@ -623,15 +498,11 @@ method options-search {
             }
         });
     });
-    document.addEventListener('focusOnSearchBar', function() {
-        focusOnSearchBar();
-    });
 
     JS
 }
 method search-scss{
     q:to/SCSS/
-    $weight-semibold: 600;
     $border: hsl(221, 14%, 86%);
     $text: var(--bulma-text);
     $background: var(--bulma-background-active);
@@ -682,7 +553,7 @@ method search-scss{
         display: grid;
         .autoComplete-result-category {
             color: var(--bulma-danger);
-            font-weight: $weight-semibold;
+            font-weight: var(--bulma-weight-semibold);
             justify-self: center;
         }
         a span.autoComplete-result-extra {
@@ -699,21 +570,103 @@ method search-scss{
         margin-right: 1%;
         width: fit-content;
     }
+    #Elucid8_search_input {
+        height: var(--bulma-control-height);
+        border-radius: 5px;
+        padding: 0 2rem 0 2.5rem;
+        background-position: left 0.6rem top 0.6rem;
+    }
+    #Elucid8_search_res {
+        padding: 0.3rem 0.5rem;
+    }
     label.Elucid8-search-mark input[type="checkbox"] {
+        opacity: 0;
+        height: 0;
+        width: 0;
+    }
+    label.Elucid8-search-mark:hover input[type="checkbox"]:checked ~ span.tooltiptext {
+        opacity: 0;
+        width: 0;
+        visibility: hidden;
+        display: inline-block;
+    }
+    label.Elucid8-search-mark:hover input[type="checkbox"] ~ span.tooltiptext {
+        opacity: 1;
+        visibility: visible;
+        width: 200%;
+        display: inline-block;
+        top: -10%;
+        right: 100%;
+    }
+    @media screen and (max-width: 1023px) {
+        label.Elucid8-search-mark:hover input[type="checkbox"] ~ span.tooltiptext {
+            top: 120%;
+            right: -100%;
+        }
+    }
+
+    label.Elucid8-search-mark:hover input[type="checkbox"] ~ span.tooltiptext.cancel {
+        opacity: 0;
+        width: 0;
+        visibility: hidden;
+        display: inline-block;
+    }
+    label.Elucid8-search-mark:hover input[type="checkbox"]:checked ~ span.tooltiptext.cancel {
+        opacity: 1;
+        visibility: visible;
+        width: 200%;
+        display: inline-block;
+    }
+    label.Elucid8-search-mark input[type="checkbox"] + span.banned {
+        opacity: 0;
+        width: 0;
+        display: inline-block;
+    }
+    label.Elucid8-search-mark input[type="checkbox"]:checked + span.banned {
+        color: var(--bulma-danger);
+        opacity: 1;
+        transform: translateX(-14px);
+        transition: opacity 1s;
+    }
+    label.optionToggle {
+        span.text {
+            font-weight: var(--bulma-weight-bold);
+            width: 10rem;
+        }
+        span.tooltiptext {
+            width: 100%;
+            right: -40%;
+        }
+        input[type="checkbox"] {
             opacity: 0;
             height: 0;
             width: 0;
+            & + span.on {
+                border: 2px solid var(--bulma-primary-30);
+                font-weight: var(--bulma-weight-normal);
+                border-radius: 5px;
+                padding: 0 5px 0 5px;
+            }
+            & ~ span.off {
+                border: 2px solid var(--bulma-background);
+                font-weight: var(--bulma-weight-normal);
+                border-radius: 5px;
+                padding: 0 5px 0 5px;
+            }
+            &:checked + span.on {
+                border: 2px solid var(--bulma-background);
+                font-weight: var(--bulma-weight-normal);
+                border-radius: 5px;
+                padding: 0 5px 0 5px;
+            }
+            &:checked ~ span.off {
+                border: 2px solid var(--bulma-danger);
+                font-weight: var(--bulma-weight-normal);
+                border-radius: 5px;
+                padding: 0 5px 0 5px;
+            }
         }
-        label.Elucid8-search-mark input[type="checkbox"] + span.banned {
-            opacity: 0;
-            width: 0;
-            display: inline-block;
-        }
-        label.Elucid8-search-mark input[type="checkbox"]:checked + span.banned {
-            color: var(--bulma-danger);
-            opacity: 1;
-            transform: translateX(-14px);
-            transition: opacity 1s;
-        }
+    }
+
     SCSS
 }

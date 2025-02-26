@@ -59,7 +59,7 @@ method templates {
                         <tr><td>{ .value[0]<subkind> }</td>
                             <td>{ .key }</td>
                             <td>{   .value
-                                    .map({ '<a href="' ~ .<source> ~ '.html#' ~ .<targ-in-fn> ~ '">' ~ .<src-caption> ~ '</a>' })
+                                    .map({ '<a href="' ~ .<source> ~ '.html' ~ ( .<targ-in-fn> ?? ('#' ~ .<targ-in-fn> ) !! '' ) ~ '">' ~ .<src-caption> ~ '</a>' })
                                     .join('<br>')
                                 }</td>
                         </tr>
@@ -93,4 +93,3 @@ method add-scss {
     }
     SCSS
 }
-
