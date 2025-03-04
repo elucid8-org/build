@@ -115,7 +115,8 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     has @!derived-langs;    #| list of languages in !src other than canonical
     has @!withs;            #| files to be rendered when restricted
     has %!glues;            #| glue files and their order
-    has @!post-all-content-files; #| callables that operate after all content files
+    has @!post-all-content-files; #| callables that operate after all content files have been processed
+    has @!post-all-files; #| callables that operate after all content & glue files have been processed
 
     submethod TWEAK( :%!config, :$!f ) {
         $!src = %!config<sources>;
@@ -125,8 +126,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         $!landing-page = %!config<landing-page>;
         $!rdp = Elucid8::Processor.new(:output-format<html>, :$!file-data-name);
         $!rdp.add-templates( RakuDoc::To::HTML.new.html-templates, :source<RakuDoc::To::HTML>);
-        $!rdp.add-plugins( 'RakuDoc::Plugin::HTML::' «~« %!config<rakuast-rakudoc-plugins>.list );
-        $!rdp.add-plugins( 'Elucid8::Plugin::HTML::' «~« %!config<plugins>.list );
+        $!rdp.add-plugins( %!config<plugins>.list );
         # for each plugin, check whether plugin-options are defined in the site config for the plugin
         # add them to the plugin's work-space, over-writing default ones
         my %d := $!rdp.templates.data;
@@ -149,6 +149,11 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
                 unless %d{$wkspc}{$callable} ~~ Callable;
             @!post-all-content-files.push: %d{$wkspc}{$callable};
+        }
+        for %!config<post-all-files>.list -> ( :key($wkspc), :value($callable) ) {
+            exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
+            unless %d{$wkspc}{$callable} ~~ Callable;
+            @!post-all-files.push: %d{$wkspc}{$callable};
         }
         my @reserved = <ui-tokens css css-link js js-link>;
         # run the scss to css conversion after all plugins have been enabled
@@ -201,7 +206,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my @canon-changes;
         my $content-changed = self.render-contents( $!canonical, @canon-changes, :canon );
         if $content-changed {
-            .( $!rdp, $!canonical, $!to ) for @!post-all-content-files;
+            .( $!rdp, $!canonical, $!to, %!config ) for @!post-all-content-files;
         }
         # this order is needed to trap changes in glues source with no change in content
         # first force function to run, then conserve what was in content change if True
@@ -211,14 +216,15 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             $content-changed = self.render-contents( $dl, @canon-changes )
                 || $content-changed;
             if $content-changed {
-                .( $!rdp, $dl, $!to ) for @!post-all-content-files
+                .( $!rdp, $dl, $!to, %!config ) for @!post-all-content-files
             }
             $content-changed = self.render-glues( $dl, @canon-changes )
                 || $content-changed;
         }
         if $content-changed {
             self.landing-page;
-            $!rdp.store( $!rdp.file-data, $!file-data-name)
+            $!rdp.store( $!rdp.file-data, $!file-data-name);
+            .( $!rdp, $!to, %!config ) for @!post-all-files
         }
         else { say 'Nothing has changed' }
     }
@@ -330,7 +336,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                 :$modified,
                 :$path,
                 language => $!canonical,
-                :landing-page, # set to True
+                home-page => "/$!landing-page",
         )), :pre-finalised);
         "$!to/$!landing-page\.html".IO.spurt($rdp.finalise);
         $rdp.file-data{'*'}{$!landing-page}{ .key } = .value for %(
@@ -348,13 +354,14 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my $language := %info<lang>;
         my $ast = $path.slurp.AST;
         my $rdp := $!rdp;
+        my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/" ) ~ $!landing-page;
         $rdp.pre-process( $language, $short, $ast );
         my $processed = $rdp.render($ast, :source-data(%(
             name => $short,
             modified => %info<modified>,
             :$path,
             :$language,
-            landing-page => $short.ends-with( %!config<landing-page> )
+            :$home-page,
         )), :pre-finalised);
         $rendered-io.spurt($rdp.finalise);
         $rdp.file-data{$language}{$short}{ .key } = .value for %(
@@ -362,7 +369,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
             modified => %info<modified>,
-            type => %info<type>,
+            type => $processed.source-data<rakudoc-config><type>:exists ?? $processed.source-data<rakudoc-config><type> !! %info<type>,
         ).pairs;
     }
 }
