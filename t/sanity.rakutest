@@ -3,7 +3,7 @@ use Test;
 
 my @modules = <
 Elucid8::Plugin::HTML::UISwitcher
-Elucid8::Plugin::HTML::Raku-Doc-Website
+Elucid8::Plugin::HTML::SiteMap
 Elucid8::Plugin::HTML::AutoIndex
 Elucid8-Build
 >;

@@ -224,7 +224,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         if $content-changed {
             self.landing-page;
             $!rdp.store( $!rdp.file-data, $!file-data-name);
-            .( $!rdp, $!to, %!config ) for @!post-all-files
+            .( $!rdp, %!config ) for @!post-all-files
         }
         else { say 'Nothing has changed' }
     }
@@ -345,6 +345,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             config => $processed.source-data<rakudoc-config>,
             lang => $!canonical,
             :type<glue>,
+            :$modified,
         );
     }
 
