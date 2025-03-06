@@ -363,6 +363,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             :$path,
             :$language,
             :$home-page,
+            type => %info<type>,
         )), :pre-finalised);
         $rendered-io.spurt($rdp.finalise);
         $rdp.file-data{$language}{$short}{ .key } = .value for %(

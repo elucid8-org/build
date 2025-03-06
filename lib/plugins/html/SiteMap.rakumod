@@ -35,10 +35,15 @@ method create-site-map( $rdp, %site-config ) {
                 when 'info' { $priority = 0.3 }
                 default { $priority = 0.5 }
             }
+            my $mod = %info<modified>;
+            use MONKEY-SEE-NO-EVAL;
+            $mod = EVAL $mod if $mod.isa(Str);
+            no MONKEY-SEE-NO-EVAL;
+            $mod .= DateTime.yyyy-mm-dd;
             $sitemap ~= qq:to/URL/;
                 <url>
                     <loc>$root/$lang$fn.html\</loc>
-                    <lastmod>{ %info<modified>.DateTime.yyyy-mm-dd }</lastmod>
+                    <lastmod>$mod\</lastmod>
                     <priority>$priority\</priority>
                 </url>
             URL
