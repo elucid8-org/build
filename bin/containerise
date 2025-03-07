@@ -1,0 +1,24 @@
+#!/bin/sh
+LO="\e[0m"
+HI="\e[1;33m\e[42m"
+if [ -z "$1" ]; then
+  echo -e "There ${HI}must${LO} be a target directory"
+  exit 1
+fi
+if [ -L "$1" ]; then
+  echo -e "$1 is a ${HI}link${LO}. It must be a real directory."
+  exit 1
+fi
+if ! [ -d "$1" ]; then
+  echo -e "$1 is not a ${HI}directory${LO}."
+  exit 1
+fi
+cd $1
+sh -c 'tar zcf ../new_raku.tar.gz *'
+c=$(buildah from docker.io/caddy:latest)
+buildah add $c ../new_raku.tar.gz /usr/share/caddy
+buildah add $c ../Caddyfile /etc/caddy/Caddyfile
+
+buildah commit --rm $c docker.io/finanalyst/new-raku-website:dev
+rm ../new_raku.tar.gz
+echo '=== completed image'
