@@ -134,7 +134,13 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             next unless %!config<plugin-options>{$wkspc}:exists;
             for %!config<plugin-options>{$wkspc}.kv { %d{$wkspc}{ $^a } = $^b }
         }
-        # set up the pre and post content callables
+        # run callables for setup milestone - after all plugin enables, and using plugin-options
+        for %!config<setup>.list -> ( :key($wkspc), :value($callable) ) {
+            exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
+                unless %d{$wkspc}{$callable} ~~ Callable;
+            %d{$wkspc}{$callable}.(%!config)
+        }
+        # callables for each milestone
         for %!config<pre-file-render>.list -> ( :key($wkspc), :value($callable) ) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
                 unless %d{$wkspc}{$callable} ~~ Callable;

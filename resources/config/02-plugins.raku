@@ -13,6 +13,9 @@
         Elucid8::Plugin::HTML::UISwitcher
         Elucid8::Plugin::HTML::AutoIndex
     >,
+    setup => (# sequence not hash because order can matter
+        RakuREPL => 'set-host-port',
+    ),
     pre-file-render => (# sequence not hash because order can matter
         SiteData => 'initialise',
     ),

@@ -14,7 +14,7 @@ has %.config =
 	:license<Artistic-2.0>,
 	:credit<finanalyst>,
 	:authors<finanalyst>,
-    :js([[self.js-text,2],]),
+    :js([[self.js-text,9],]), # should come as late as possible, so all UI elements have been created
     :ui-tokens( %( :UI_Switch<Switch UI>, :LangName<English>)),
     :gather-ui-tokens( -> $rdp, %config { self.create-dictionary( $rdp, %config )}),
     :add-languages( -> %config { self.add-languages( %config ) } ),
