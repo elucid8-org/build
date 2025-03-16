@@ -17,7 +17,7 @@ in the browser by a JS script from a dictionary that is itself generated at rend
 time from the C<ui-tokens>.
 
 At install time, the dictionary is created from the C<ui-tokens> in each plugin, then
-stored in the C<L10N> directory.
+stored in the C<Misc> directory.
 
 The dictionary is then added to by translating the keys in the canonical language.
 
@@ -105,7 +105,7 @@ and changing content.
 
 The dictionary is created in the following steps:
 =numitem the C<ui-tokens> and their canonical values are collected from each plugin
-=numitem The R<L10N> directory is checked for the existence of a file called B<dictionary.rakuon>.
+=numitem The R<Misc> directory is checked for the existence of a file called B<dictionary.rakuon>.
 =numitem2 If the dictionary file exists, then the dictionary object is created from the file
 =numitem2 If the dictionary file does not exist, then a blank dictionary object.
 =numitem All the collected keys are compared with the keys of the dictionary object

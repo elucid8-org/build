@@ -122,7 +122,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         $!src = %!config<sources>;
         $!to = %!config<destination>;
         $!canonical = %!config<canonical>;
-        $!file-data-name = %!config<file-data-name>;
+        $!file-data-name = %!config<Misc> ~ '/' ~ %!config<file-data-name>;
         $!landing-page = %!config<landing-page>;
         $!rdp = Elucid8::Processor.new(:output-format<html>, :$!file-data-name);
         $!rdp.add-templates( RakuDoc::To::HTML.new.html-templates, :source<RakuDoc::To::HTML>);
@@ -385,8 +385,8 @@ class Elucid8::Engine is RakuDoc::To::HTML {
 proto sub MAIN(|) is export {*}
 
 multi sub MAIN(
-    :$config = 'config', #| localised config file
-    Bool :install($)!,     #| install a config directory (if absent) from default values
+    :$config = 'config', #= localised config file
+    Bool :install($)!,     #= install a config directory (if absent) from default values
 ) {
     my $path = $config.IO.mkdir;
     my $resource;
@@ -397,7 +397,7 @@ multi sub MAIN(
     }
     my %options = get-config(:$path);
     # create the necessary directory structure from the config
-    mktree %options<L10N>;
+    mktree %options<Misc>;
     mktree %options<sources> ~ '/' ~ %options<canonical>;
 }
 
@@ -409,11 +409,13 @@ multi sub MAIN(
 };
 
 multi sub MAIN(
-    :$config = 'config',      #| localised config file
-    Bool :force(:$f) = False, #| force complete rendering, otherwise only modified
-    Str :$debug = 'None',     #| RakuAST-RakuDoc-Render debug list
-    Str :$verbose = '',       #| RakuAST-RakuDoc-Render verbose parameter
-    Str :$with-only,          #| only render these files, over-rides the config value
+    :$config = 'config',      #= localised config file
+    Bool :force(:$f) = False, #= force complete rendering, otherwise only modified
+    Str :$debug = 'None',     #= RakuAST-RakuDoc-Render debug list
+    Str :$verbose = '',       #= RakuAST-RakuDoc-Render verbose parameter
+    Str :$with-only,          #= only render these files, over-rides the config value
+    Bool :$regenerate-from-scratch = False ,
+                              #= delete any previous rendering and file data. Long process
 ) {
     my %config;
     if $config.IO ~~ :e & :d {
@@ -430,10 +432,16 @@ multi sub MAIN(
     %config<with-only> = $_ with $with-only; # only over-ride if set
     # created deprecated url map
     unless (%config<destination> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
-    # create the server-centric files for Caddy by default
+    # create the server-centric files for Caddy & Cro run-locally by default
         mktree %config<destination> ~ '/' ~ NAV_DIR;
         (%config<destination> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
             %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
+    }
+    if $regenerate-from-scratch {
+        say "Rebuilding from scratch. May take a longer.";
+        my $ok = empty-directory %config<publication>;
+        $ok = 'file-data.rakuon'.IO.unlink if $ok;
+        exit note('Could not delete old build output') unless $ok
     }
     my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose );
     $engine.process-all

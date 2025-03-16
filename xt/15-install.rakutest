@@ -26,7 +26,7 @@ runs_ok(
 );
 subtest 'config directories made' => {
     plan 4;
-    for <config sources L10N sources/en> {
+    for <config sources Misc sources/en> {
         ok .IO ~~ :e & :d, "$_ dir installed"
     }
 }
@@ -46,7 +46,7 @@ runs_ok(
 );
 subtest 'custom config directories made' => {
     plan 4;
-    for <qwert sources L10N sources/en> {
+    for <qwert sources Misc sources/en> {
         ok .IO ~~ :e & :d, "$_ dir installed"
     }
 }
