@@ -3,7 +3,7 @@
     repositories => %(
         raku-docs-en => %(
             repo-name => 'Raku/doc',
-            source-entry => 'docs/',
+            source-entry => '/docs',
             destination => 'en',
             description => 'documentation of the Raku language',
         ),
@@ -12,6 +12,7 @@
             source-entry => '/',
             destination => 'en/language',
             description => 'Rakudoc specification document',
+            :ignore('README',),
         ),
         doc-website => %(
             destination => 'en',
