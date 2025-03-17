@@ -1,5 +1,7 @@
 %(
     :repository-store<repos>,
+    :repo-data-file<repo-data-file>, # file containing information about each file in repo
+        # together with the link to the files for editing
     repositories => %(
         raku-docs-en => %(
             repo-name => 'Raku/doc',

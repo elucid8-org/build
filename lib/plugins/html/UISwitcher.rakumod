@@ -3,6 +3,7 @@ use RakuDoc::Templates;
 use RakuDoc::Render;
 use JSON::Fast;
 use PrettyDump;
+use RakuConfig;
 
 unit class Elucid8::Plugin::HTML::UISwitcher;
 has Str $!dictionary = '';
@@ -43,7 +44,7 @@ method create-dictionary( $rdp, %config ) {
         # Note we are only interested in new keys, not in values on file, which may be edited
         %!dict{ %config<canonical> }{ $_ } = %ui-tokens{ $_ } for @new-keys;
             note 'New UI language tokens detected: ', @new-keys.join(', ');
-        $rdp.store( %!dict, %config<Misc> ~ '/ui-dictionary.rakuon' )
+        dictionary-store( %!dict, %config<Misc> ~ '/ui-dictionary.rakuon' )
     }
     # collapse & convert to Str and evaluate closures
     use MONKEY-SEE-NO-EVAL;

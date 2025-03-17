@@ -40,65 +40,6 @@ class Elucid8::Processor is HTML::Processor {
         %!file-data<current>:delete; # discard now
         $rendered
     }
-    method store( %dict, $fn ) {
-        my $pretty = PrettyDump.new;
-        my $pair-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            [~]
-                '｢', $ds.key, '｣',
-                ' => ',
-                $pretty.dump: $ds.value, :depth(0)
-
-            };
-        my $hash-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            my $longest-key = $ds.keys.max: *.chars;
-            my $template = "%-{2+$depth+1+$longest-key.chars}s => %s";
-
-            my $str = do {
-                if @($ds).keys {
-                    my $separator = [~] $pretty.pre-separator-spacing, ',', $pretty.post-separator-spacing;
-                    [~]
-                        $pretty.pre-item-spacing,
-                        join( $separator,
-                            grep { $_ ~~ Str:D },
-                            map {
-                                /^ \t* '｢' .*? '｣' \h+ '=>' \h+/
-                                    ??
-                                sprintf( $template, .split: / \h+ '=>' \h+  /, 2 )
-                                    !!
-                                $_
-                                },
-                            map { $pretty.dump: $_, :depth($depth+1) }, $ds.pairs
-                            ),
-                        $pretty.post-item-spacing;
-                    }
-                else {
-                    $pretty.intra-group-spacing;
-                    }
-                }
-
-            "\{$str}"
-            }
-       my $array-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            $pretty.Array($ds, :start('['), :$depth)
-        };
-        my $list-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            $pretty.List($ds, :start('('), :$depth)
-        };
-        my $rakuast-block-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            $pretty.dump: $ds.raku, :depth(0)
-        };
-        my $instant-code = -> PrettyDump $pretty, $ds, Int:D :$depth = 0 --> Str {
-            $pretty.dump: $ds.raku, :depth(0)
-        };
-        $pretty.add-handler: 'Instant', $instant-code;
-        $pretty.add-handler: 'Array', $array-code;
-        $pretty.add-handler: 'List', $list-code;
-        $pretty.add-handler: 'Pair', $pair-code;
-        $pretty.add-handler: 'Hash', $hash-code;
-        $pretty.add-handler: 'SetHash', $hash-code;
-        $pretty.add-handler: 'RakuAST::Doc::Block', $rakuast-block-code;
-        $fn.IO.spurt: $pretty.dump(%dict);
-    }
 }
 
 class Elucid8::Engine is RakuDoc::To::HTML {
@@ -229,7 +170,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         }
         if $content-changed {
             self.landing-page;
-            $!rdp.store( $!rdp.file-data, $!file-data-name);
+            dictionary-store( $!rdp.file-data, $!file-data-name);
             .( $!rdp, %!config ) for @!post-all-files
         }
         else { say 'Nothing has changed' }

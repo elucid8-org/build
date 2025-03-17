@@ -1,6 +1,7 @@
 use v6.d;
 use RakuConfig;
 use File::Directory::Tree;
+use Git::Blame::File;
 
 proto sub MAIN ( |c ) is export {*}
 
@@ -29,23 +30,24 @@ multi sub MAIN (
     mktree $repo-dir unless $repo-dir.IO ~~ :e & :d;
     my $proc;
     my $repo-full;
+    my %repo-data;
     # This assumes git & a default to github. If other, then 'clone-statement' needs to be provided
     # First clone / pull repositories
-    for %config<repositories>.kv -> $repo-name, %info {
-        # if repo-name is blank, then the current repo is meant
+    for %config<repositories>.kv -> $local-repo-name, %info {
+        # if %info<repo-name> is blank, then the current repo is meant
         next unless %info<repo-name>;
-        $repo-full = "$repo-dir/$repo-name";
+        $repo-full = "$repo-dir/$local-repo-name";
         if $repo-full.IO ~~ :e & :d {
-            say "Pulling $repo-name";
+            say "Pulling $local-repo-name";
             $proc = run <<git -C $repo-full pull>>, :merge;
-            exit note ( "Could not 'pull' on $repo-name. " ~ $proc.out.slurp(:close) )
+            exit note ( "Could not 'pull' on $local-repo-name (cloned from {%info<repo-name>}). " ~ $proc.out.slurp(:close) )
             if $proc.exitcode;
         }
         else {
-            say "Cloning $repo-name";
+            say "Cloning $local-repo-name";
             my $clone-st = %info<clone-statement> // "git clone -q -- https://github.com/{ %info<repo-name> }.git $repo-full";
             $proc = run $clone-st.split(/' '/), :merge;
-            exit note ( "Could not clone $repo-name. Using:\n$clone-st\nGot error\n", $proc.out.slurp(:close) )
+            exit note ( "Could not clone $local-repo-name from {%info<repo-name>}. Using:\n$clone-st\nGot error\n", $proc.out.slurp(:close) )
                 if $proc.exitcode;
         }
     }
@@ -57,9 +59,19 @@ multi sub MAIN (
     # Do not transfer any in the ignore field
     # Only transfer with format .rakumod
     my @withs = %config<with-only>.list;
+#    my Git::Blame::File $blame-info;
     for %config<repositories>.kv -> $repo-name, %info {
         # if repo-name is blank, then already in sources
-        next unless %info<repo-name>;
+        my %d := %repo-data{ $repo-name } = {};
+        unless %info<repo-name> {
+            for "{ %config<sources> }/%config<canonical>".IO.dir(test => *.ends-with('.rakudoc'))
+            {
+#                indir %config<repository-store>, { $blame-info .= new( $_ )};
+#                %d{$_}<modified> = $blame-info.modified;
+                %d{$_}<home-path> = 'https://github.com/Elucid8/Sandpit/edit/main/' ~ $_;
+            }
+            next
+        }
         $repo-full = "$repo-dir/$repo-name/" ~ %info<source-entry>;
         my @ignores = ( %info<ignore> // () ).list;
         my @transfers = $repo-full.IO.dir;
@@ -77,8 +89,13 @@ multi sub MAIN (
                 $link-name .= subst( / ^ \w /, *.lc ); # really only for Raku documentation
                 $link-name = "{%config<sources>}/{%info<destination>}/$link-name";
                 mktree $link-name.IO.dirname;
-                $next.symlink($link-name)
+                $next.symlink($link-name) unless $link-name.IO ~~ :e;
+#                indir %config<repository-store>, { $blame-info .= new($next.Str) };
+#                %d{$next.Str}<modified> = $blame-info.modified;
+                %d{$next.Str}<home-path> = ( %info<path-edit-prefix> // 'https://github.com/Raku/doc/edit/main/' )
+                    ~ $next.relative($repo-full);
             }
         }
     }
+    "{%config<Misc>}/{%config<repo-data-file>}".IO.spurt: %repo-data.raku;
 }
