@@ -18,9 +18,9 @@ multi sub MAIN(
         }
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢elucid8-build --config=$config --install｣ ." }
     }
-    my $dict-fn = %config<Misc> ~ '/' ~ %config<ui-dictionary>;
+    my $dict-fn = %config<misc> ~ '/' ~ %config<ui-dictionary>;
     exit note "$dict-fn does not exist" unless ($dict-fn.IO ~~ :e & :f).so;
-    my $new-fn = %config<Misc> ~ '/new-' ~ %config<ui-dictionary>;
+    my $new-fn = %config<misc> ~ '/new-' ~ %config<ui-dictionary>;
     my %dict = EVALFILE( $dict-fn );
     my $canonical = %config<canonical>;
     my @d-langs = %dict.keys.grep({  $_ ne $canonical  });

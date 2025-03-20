@@ -1,26 +1,34 @@
 %(
     :repository-store<repos>,
-    :repo-data-file<repo-data-file>, # file containing information about each file in repo
-        # together with the link to the files for editing
     repositories => %(
-        raku-docs-en => %(
+        raku-docs => %(
             repo-name => 'Raku/doc',
-            source-entry => '/docs',
-            destination => 'en',
             description => 'documentation of the Raku language',
+            languages => %(
+                en => %(
+                    source-entry => '/docs',
+                ),
+            ),
         ),
-        rakudoc-en => %(
+        rakudoc => %(
             repo-name => 'Raku/RakuDoc-GAMMA',
-            source-entry => '/',
-            destination => 'en/language',
             description => 'Rakudoc specification document',
-            :ignore('README',),
+            languages => %(
+                en => %(
+                    source-entry => '/',
+                    destination => 'language/',
+                    :select('rakudoc_v2',),
+                ),
+            ),
         ),
-        doc-website => %(
-            destination => 'en',
+        'self' => %( # meaning this repository
+            repo-name => 'Elucid8-sandpit',
             description => 'website sources',
-            repo-name => '',
-            source-entry => 'sources/en',
-        )
+            languages => %(
+                en => %(
+                    source-entry => 'site-sources/en',
+                ),
+            ),
+        ),
     ),
 )

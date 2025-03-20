@@ -10,12 +10,12 @@ multi sub MAIN (
         :$port = 3000, #= default port, with defaults set browser to localhost:3000
     ) is export {
     my %config = get-config(:path( $config ));
-    my $destination = %config<destination>;
+    my $publication = %config<publication>;
     my $canonical = %config<canonical>;
     my %map = %config<deprecated>.hash;
     my $landing = $canonical ~ '/' ~ %config<landing-page>;
     my @urls;
-    my $pretty-urls = %config<destination> ~ '/assets/prettyurls';
+    my $pretty-urls = %config<publication> ~ '/assets/prettyurls';
     if $pretty-urls.IO ~~ :e & :f {
         for $pretty-urls.IO.lines {
             if m/ \" ~ \" (.+?) \s+ \" ~ \" (.+) / {
@@ -32,10 +32,10 @@ multi sub MAIN (
             my $url = '/' ~ @path.join('/');
             @path = (%map{$url},) if $url ~~ any(@urls);
             @path[*- 1] ~= ".html"
-                unless @path[0] eq '' or @path[*- 1].ends-with('.html') or "$destination/{ @path.join('/') }".IO ~~ :e & :f;
+                unless @path[0] eq '' or @path[*- 1].ends-with('.html') or "$publication/{ @path.join('/') }".IO ~~ :e & :f;
             @path.unshift("$canonical")
-            unless @path[0] eq '' or "$destination/{ @path.join('/') }".IO ~~ :e & :f;
-            static "$destination", @path, :indexes("$landing\.html",);
+            unless @path[0] eq '' or "$publication/{ @path.join('/') }".IO ~~ :e & :f;
+            static "$publication", @path, :indexes("$landing\.html",);
         }
     }
     my Cro::Service $http = Cro::HTTP::Server.new(

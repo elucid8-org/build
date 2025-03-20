@@ -37,14 +37,14 @@ method create-dictionary( $rdp, %config ) {
         .map(  *.value.<ui-tokens>.Slip )
         .map({ .key => .value.Str })
         .hash;
-    my $dict-fn = %config<Misc> ~ '/' ~ %config<ui-dictionary>;
+    my $dict-fn = %config<misc> ~ '/' ~ %config<ui-dictionary>;
     %!dict = EVALFILE( $dict-fn ) if $dict-fn.IO ~~ :e & :f;
     my @new-keys = (%ui-tokens (-) %!dict{ %config<canonical> }.keys ).keys;
     if @new-keys.elems {
         # Note we are only interested in new keys, not in values on file, which may be edited
         %!dict{ %config<canonical> }{ $_ } = %ui-tokens{ $_ } for @new-keys;
             note 'New UI language tokens detected: ', @new-keys.join(', ');
-        dictionary-store( %!dict, %config<Misc> ~ '/ui-dictionary.rakuon' )
+        dictionary-store( %!dict, %config<misc> ~ '/ui-dictionary.rakuon' )
     }
     # collapse & convert to Str and evaluate closures
     use MONKEY-SEE-NO-EVAL;

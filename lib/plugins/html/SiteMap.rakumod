@@ -53,5 +53,5 @@ method create-site-map( $rdp, %site-config ) {
     $sitemap ~= q:to/END/;
     </urlset>
     END
-    "{ %site-config<destination> }/sitemap.xml".IO.spurt: $sitemap
+    "{ %site-config<publication> }/sitemap.xml".IO.spurt: $sitemap
 }

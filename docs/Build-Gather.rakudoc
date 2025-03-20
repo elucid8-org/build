@@ -1,0 +1,51 @@
+=begin rakudoc
+=TITLE Build and Gather
+=SUBTITLE The two main processes in the Elucid8 framework
+=for LICENSE :hidden
+Artistic-2.0
+=for AUTHORS :hidden
+Richard Hainswort
+=head Overview
+
+In general, RakuDoc sources are held in git repositories.
+
+However, if the I<sources> already contains all the sources, and no sources are kept in
+repositories, then the C<gather-sources> utility need not be used.
+
+The following steps are then followed for each build sequence:
+=numitem The C<gather-sources> utility is used to:
+=item2 clone the RakuDoc sources in the website build are under
+the C<repos>N<Using the C<config> file it is possible to rename nearly every directory
+and file name, so the key name in the config file is used here.>
+directory using C<gather-sources>.
+=item3 Each repository is specified in the I<04.repositories> config file.
+=item3 A repository may contain files for multiple languages.
+
+=item2 create links to the desired I<.rakudoc> files in the C<sources> directory.
+=item3 Files may be selected on a global basis by setting the L<with-only|#With only filter>,
+=item3 Files may be filtered out at the language/repo using C<ignore>, files not listed in I<ignore>
+are linked in
+=item3 Files may be selected at the language/repo using C<select>, no other files are let through.
+=item3 Files in both I<select> and I<ignore> will be ignored.
+
+=item2 generate a file called C<repo-information>, which is stored in C<misc>.
+=numitem The C<elucid8-build> utility is then called to:
+=item2 update the C<file-data> file.
+=item3 If the I<repo-information> file exists, it is the basis for I<file-data>.
+=item3 If the I<repo-information> file does not exist, I<file-data> is built from
+the files in the I<sources> directory.
+=item2 render the files in the I<sources> directory into the C<publication> directory
+=item3 Existing rendered files are updated if
+=item4 the rendered date is older than the last modification date of the source
+=item4 the force C<-f> flag is set
+=item3 if a I<:with-only> list is present in the config file, or I<elucid8-build> is called
+with a I<--with-only> argument on the CLI, then only those sources are rendered 
+
+The build process may be controlled using the following options with I<elucid8-build>:
+=item C<--regenerate-from-scratch> = delete the I<publication> directory and the I<file-data> file.
+=item C<--with-only>S<               >= only operate on these files (others in I<publication> directory will be untouched).
+=item C<--f>S<                       >= ignore the modified attribute.
+
+=place semantic:LICENSE :caption<License>
+=place semantic:AUTHORS :caption<Credits>
+=end rakudoc

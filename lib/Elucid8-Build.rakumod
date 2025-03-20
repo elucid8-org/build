@@ -61,9 +61,9 @@ class Elucid8::Engine is RakuDoc::To::HTML {
 
     submethod TWEAK( :%!config, :$!f ) {
         $!src = %!config<sources>;
-        $!to = %!config<destination>;
+        $!to = %!config<publication>;
         $!canonical = %!config<canonical>;
-        $!file-data-name = %!config<Misc> ~ '/' ~ %!config<file-data-name>;
+        $!file-data-name = %!config<misc> ~ '/' ~ %!config<file-data-name>;
         $!landing-page = %!config<landing-page>;
         $!rdp = Elucid8::Processor.new(:output-format<html>, :$!file-data-name);
         $!rdp.add-templates( RakuDoc::To::HTML.new.html-templates, :source<RakuDoc::To::HTML>);
@@ -115,6 +115,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method process-all {
+
         my @todo = $!src.IO.dir
             .map({ # only save the over-riding landing page source
                 if .f && (.Str eq ( $!landing-page ~ '.rakudoc' ) ) { $!landing-source = .slurp };
@@ -214,8 +215,9 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             .hash.kv
             -> $short, %info
             {
-            with $short.IO.dirname { mktree "$!to/$lang/$_" unless "$!to/$lang/$_".IO ~~ :e & :d }
-            my $rendered-io = "$!to/$lang/$short\.html".IO;
+            my $rendered-io = $short.subst(/ ^ \w /, *.lc ); # substitution only needed for Raku documentation
+            $rendered-io = "$!to/$lang/$rendered-io\.html".IO;
+            with $rendered-io.dirname { mktree $_ unless .IO ~~ :e & :d }
             my $do-file = $!f                        # force flag is set
                         || $changes                  # a lower order glue file has been changed
                         || ($rdp.file-data{$lang}{$short}:!exists) # the file has not be rendered before
@@ -223,7 +225,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                         || %info<modified> > $rendered-io.modified # rendered file is older than source
                         ;
             %info<type> = 'glue';
-            self.render-file($short, %info, $rendered-io) if $do-file;
+            self.render-file($lang, $short, %info, $rendered-io) if $do-file;
             $changes ||= $do-file
         }
         $changes
@@ -296,10 +298,9 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         );
     }
 
-    method render-file($short, %info, $rendered-io) {
+    method render-file($language, $short, %info, $rendered-io) {
         say "rendering { %info<path> } to $rendered-io";
         my $path := %info<path>;
-        my $language := %info<lang>;
         my $ast = $path.slurp.AST;
         my $rdp := $!rdp;
         my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/" ) ~ $!landing-page;
@@ -338,7 +339,7 @@ multi sub MAIN(
     }
     my %options = get-config(:$path);
     # create the necessary directory structure from the config
-    mktree %options<Misc>;
+    mktree %options<misc>;
     mktree %options<sources> ~ '/' ~ %options<canonical>;
 }
 
@@ -372,16 +373,16 @@ multi sub MAIN(
     }
     %config<with-only> = $_ with $with-only; # only over-ride if set
     # created deprecated url map
-    unless (%config<destination> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
+    unless (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
     # create the server-centric files for Caddy & Cro run-locally by default
-        mktree %config<destination> ~ '/' ~ NAV_DIR;
-        (%config<destination> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
+        mktree %config<publication> ~ '/' ~ NAV_DIR;
+        (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
             %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
     if $regenerate-from-scratch {
-        say "Rebuilding from scratch. May take a longer.";
+        say "Rebuilding from scratch. May take a little longer.";
         my $ok = empty-directory %config<publication>;
-        $ok = 'file-data.rakuon'.IO.unlink if $ok;
+        $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
         exit note('Could not delete old build output') unless $ok
     }
     my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose );
