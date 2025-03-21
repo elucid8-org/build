@@ -115,34 +115,41 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method process-all {
-
-        my @todo = $!src.IO.dir
-            .map({ # only save the over-riding landing page source
-                if .f && (.Str eq ( $!landing-page ~ '.rakudoc' ) ) { $!landing-source = .slurp };
-                $_
-            })
-            .grep( *.d ); # directories under sources must contain language content
-        @!derived-langs = @todo.map( *.relative($!src) );
-        exit note "No directory found corresponding to ｢$!canonical｣" unless
+        my $repo-url = "{%!config<misc>}/{%!config<repository-info-file>}";
+        if $repo-url.IO ~~ :e & :d {
+            %!sources = EVALFILE $repo-url;
+            @!derived-langs = %!sources.keys.grep({ $_ ne $!canonical })
+        }
+        else {
+            my @todo = $!src.IO.dir
+                    .map({
+                        # only save the over-riding landing page source
+                        if .f && (.Str eq ( $!landing-page ~ '.rakudoc')) { $!landing-source = .slurp };
+                        $_
+                    })
+                    .grep( *.d );
+            # directories under sources must contain language content
+            @!derived-langs = @todo.map( *.relative($!src) );
+            exit note "No directory found corresponding to ｢$!canonical｣" unless
             $!canonical (elem) @!derived-langs;
-        @!derived-langs .= grep({ $_ ne $!canonical });
-        while @todo {
-            for @todo.pop.dir -> $path {
-                if $path.d {
-                    @todo.push: $path;
-                }
-                else {
-                    my $lang = $path.dirname.split('/').[1];
-                    my $short = $path.relative($!src).IO.relative($lang).IO.extension('');
-                    %!sources{$lang}{$short} = %(
-                        :$path,
-                        modified => $path.modified,
-                        :$lang
-                    )
+            @!derived-langs .= grep({ $_ ne $!canonical });
+            while @todo {
+                for @todo.pop.dir -> $path {
+                    if $path.d {
+                        @todo.push: $path;
+                    }
+                    else {
+                        my $lang = $path.dirname.split('/').[1];
+                        my $short = $path.relative($!src).IO.relative($lang).IO.extension('');
+                        %!sources{$lang}{$short} = %(
+                            :$path,
+                            modified => $path.modified,
+                        )
+                    }
                 }
             }
         }
-        exit note "No sources found in ｢$!src｣" unless +%!sources;
+        exit note "No sources found in ｢$!src｣ and ｢$repo-url｣ not found" unless +%!sources;
         self.render-files;
         # post-processing saves the file data, so it does not need to happen here
     }
@@ -194,7 +201,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                              || ( $canon.not and $short (elem) @canon-changes )
                              ;
             %info<type> = 'primary';
-            self.render-file($short, %info, $rendered-io) if $do-file;
+            self.render-file($lang, $short, %info, $rendered-io) if $do-file;
             @canon-changes.push( $short ) if $canon and $do-file;
             $changes ||= $do-file
         }

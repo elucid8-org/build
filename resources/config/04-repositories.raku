@@ -1,5 +1,6 @@
 %(
     :repository-store<repos>,
+    :repository-info-file<repo-info.rakuon>,
     repositories => %(
         raku-docs => %(
             repo-name => 'Raku/doc',

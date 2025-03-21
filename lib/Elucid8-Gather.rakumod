@@ -13,6 +13,7 @@ multi sub MAIN (
 }
 multi sub MAIN (
         :$config = 'config',      #= localised config file
+        :$skip-git = False,       #= skip git pull if offline
 ) {
     my %config;
     if $config.IO ~~ :e & :d {
@@ -26,31 +27,37 @@ multi sub MAIN (
         }
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
-    my %file-data;
-    my $file-data-url = "{%config<misc>}/{%config<file-data-name>}";
-    %file-data = EVALFILE $file-data-url if $file-data-url.IO ~~ :e & :f;
+    my %repo-info;
+    my $repo-info-url = "{%config<misc>}/{%config<repository-info-file>}";
+    %repo-info = EVALFILE $repo-info-url if $repo-info-url.IO ~~ :e & :f;
     my $repo-dir = %config<repository-store>;
     mktree $repo-dir unless $repo-dir.IO ~~ :e & :d;
     my $proc;
     my $repo-full;
-    # This assumes git & a default to github. If other, then 'clone-statement' needs to be provided
-    # First clone / pull repositories
-    for %config<repositories>.kv -> $local-repo-name, %info {
-        # if %info<repo-name> is self, then the current repo is meant
-        next if $local-repo-name eq 'self';
-        $repo-full = "$repo-dir/$local-repo-name";
-        if $repo-full.IO ~~ :e & :d {
-            say "Pulling $local-repo-name";
-            $proc = run <<git -C $repo-full pull>>, :merge;
-            exit note ( "Could not 'pull' on $local-repo-name (cloned from {%info<repo-name>}). " ~ $proc.out.slurp(:close) )
+    unless $skip-git {
+        # This assumes git & a default to github. If other, then 'clone-statement' needs to be provided
+        # First clone / pull repositories
+        for %config<repositories>.kv -> $local-repo-name, %info {
+            # if %info<repo-name> is self, then the current repo is meant
+            next if $local-repo-name eq 'self';
+            $repo-full = "$repo-dir/$local-repo-name";
+            if $repo-full.IO ~~ :e & :d {
+                say "Pulling $local-repo-name";
+                $proc = run <<git -C $repo-full pull>>, :merge;
+                exit note ( "Could not 'pull' on $local-repo-name (cloned from { %info<repo-name> }). Try with '--skip-git'." ~ $proc
+                .out.slurp(:close))
                 if $proc.exitcode;
-        }
-        else {
-            say "Cloning $local-repo-name";
-            my $clone-st = %info<clone-statement> // "git clone -q -- https://github.com/{ %info<repo-name> }.git $repo-full";
-            $proc = run $clone-st.split(/' '/), :merge;
-            exit note ( "Could not clone $local-repo-name from {%info<repo-name>}. Using:\n$clone-st\nGot error\n", $proc.out.slurp(:close) )
+            }
+            else {
+                say "Cloning $local-repo-name";
+                my $clone-st = %info<clone-statement> //
+                "git clone -q -- https://github.com/{ %info<repo-name> }.git $repo-full";
+                $proc = run $clone-st.split(/' '/), :merge;
+                exit note (
+                "Could not clone $local-repo-name from { %info<repo-name> }. Using:\n$clone-st\nGot error\n", $proc.out
+                .slurp(:close))
                 if $proc.exitcode;
+            }
         }
     }
     # Now make available to sources, which should only occur after git operations
@@ -61,20 +68,26 @@ multi sub MAIN (
     # Do not transfer any in repo/lang ignore list, if exists
     # Do not transfer if file-name (link) already exists in source
     my @withs = %config<with-only>.list;
+    # Add in all the glue files, if withs has elements
+    if @withs.elems {
+        @withs.append: %config<glues>.keys
+    }
     my Git::Blame::File $blame-info;
-    my $to-stem = %config<publication>;
-    for %config<repositories>.kv -> $local-repo-name, %repo-info {
-        my $repo-stem = "$repo-dir/$local-repo-name";
-        $repo-stem = '.' if $local-repo-name eq 'self';
-        for %repo-info<languages>.kv -> $lang, %lang-info {
-            my %d := %file-data{ $lang };
+    my $to-stem = %config<sources>;
+    for %config<repositories>.kv -> $local-repo-name, %repo-config {
+        my $repo-stem = "$repo-dir/$local-repo-name/";
+        $repo-stem = '' if $local-repo-name eq 'self';
+        for %repo-config<languages>.kv -> $lang, %lang-info {
+            # @transfers may contain directories too
+            %repo-info{$lang} = %() unless %repo-info{ $lang }:exists;
+            my %update := %repo-info{ $lang }.hash;
             my $from-stem = $repo-stem ~ %lang-info<source-entry>;
             my $to = $to-stem ~ '/' ~ $lang ~ '/';
             $to ~= "$_/" with %lang-info<destination>;
             # only transfer selected, if exists
             my @transfers;
             if %lang-info<select>:exists {
-                @transfers = %lang-info<select>.list
+                @transfers = %lang-info<select>.map({ "$from-stem/$_.rakudoc".IO })
             }
             else {
                 @transfers = $from-stem.IO.dir
@@ -88,24 +101,19 @@ multi sub MAIN (
                     next
                 }
                 next unless $next.Str.ends-with('.rakudoc');
-                if @withs.elems and $next.relative($from-stem).IO.extension('') eq @withs.none {
-                    next
-                }
-                elsif @ignores.elems and $next.relative($from-stem).IO.extension('') eq @ignores.any {
-                    next
-                }
-                else  {
-                    my $link-name = $to ~ $next.relative($from-stem);
-                    mktree $link-name.IO.dirname;
-                    $next.symlink($link-name) unless $link-name.IO ~~ :e;
-                    $blame-info .= new($next.Str);
-                    %d{$next.Str}<modified> = $blame-info.modified;
-                    %d{$next.Str}<home-path> =
-                            ( %info<path-edit-prefix> // "htps://github.com/{%repo-info<repo-name>}/edit/main/" )
-                            ~ $next.relative($from-stem);
-                }
+                next if @withs.elems and $next.relative($from-stem).IO.extension('') eq @withs.none;
+                next if @ignores.elems and $next.relative($from-stem).IO.extension('') eq @ignores.any;
+                # operate on filtered files
+                my $link-name = $to ~ $next.relative($from-stem);
+                mktree $link-name.IO.dirname;
+                $next.symlink($link-name) unless $link-name.IO ~~ :e;
+                $blame-info .= new($next.Str);
+                %update{$next.Str}<modified> = $blame-info.modified;
+                %update{$next.Str}<home-path> =
+                    ( %lang-info<path-edit-prefix> // "htps://github.com/{%repo-config<repo-name>}/edit/main/" )
+                    ~ $next.relative($from-stem);
             }
         }
     }
-    dictionary-store(%file-data, $file-data-url );
+    dictionary-store(%repo-info, $repo-info-url );
 }
