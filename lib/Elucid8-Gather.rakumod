@@ -29,7 +29,8 @@ multi sub MAIN (
     }
     my %repo-info;
     my $repo-info-url = "{%config<misc>}/{%config<repository-info-file>}";
-    %repo-info = EVALFILE $repo-info-url if $repo-info-url.IO ~~ :e & :f;
+    # Is there a need for %repo-info to be accessed by Gather?
+#    %repo-info = EVALFILE $repo-info-url if $repo-info-url.IO ~~ :e & :f;
     my $repo-dir = %config<repository-store>;
     mktree $repo-dir unless $repo-dir.IO ~~ :e & :d;
     my $proc;
@@ -108,10 +109,14 @@ multi sub MAIN (
                 mktree $link-name.IO.dirname;
                 $next.symlink($link-name) unless $link-name.IO ~~ :e;
                 $blame-info .= new($next.Str);
-                %update{$next.Str}<modified> = $blame-info.modified;
-                %update{$next.Str}<home-path> =
-                    ( %lang-info<path-edit-prefix> // "htps://github.com/{%repo-config<repo-name>}/edit/main/" )
-                    ~ $next.relative($from-stem);
+                # since all files here are extension .rakudoc, not need tor extension here
+                my $key = $next.extension('');
+                %update{$key}<modified> = $blame-info.modified;
+                %update{$key}<path> = $next.relative($from-stem);
+                %update{$key}<repo-prefix> =
+                    %lang-info<path-edit-prefix>
+                    // "htps://github.com/{%repo-config<repo-name>}/edit/main/"
+                ;
             }
         }
     }

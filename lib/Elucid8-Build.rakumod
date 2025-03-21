@@ -116,9 +116,9 @@ class Elucid8::Engine is RakuDoc::To::HTML {
 
     method process-all {
         my $repo-url = "{%!config<misc>}/{%!config<repository-info-file>}";
-        if $repo-url.IO ~~ :e & :d {
+        if $repo-url.IO ~~ :e & :f {
             %!sources = EVALFILE $repo-url;
-            @!derived-langs = %!sources.keys.grep({ $_ ne $!canonical })
+            @!derived-langs = %!sources.keys.grep({ $_ ne $!canonical });
         }
         else {
             my @todo = $!src.IO.dir
@@ -143,13 +143,14 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                         my $short = $path.relative($!src).IO.relative($lang).IO.extension('');
                         %!sources{$lang}{$short} = %(
                             :$path,
-                            modified => $path.modified,
+                            modified => $path.modified.DateTime,
+                            repo-prefix => '',
                         )
                     }
                 }
             }
         }
-        exit note "No sources found in ｢$!src｣ and ｢$repo-url｣ not found" unless +%!sources;
+        exit note "No sources found in ｢$!src｣, and ｢$repo-url｣ not found" unless +%!sources;
         self.render-files;
         # post-processing saves the file data, so it does not need to happen here
     }
