@@ -8,6 +8,7 @@
             languages => %(
                 en => %(
                     source-entry => '/docs',
+                    destination-modify => '*.subst(/ ^ \w /, *.lc)',
                 ),
             ),
         ),
@@ -23,7 +24,7 @@
             ),
         ),
         'self' => %( # meaning this repository
-            repo-name => 'Elucid8-sandpit',
+            repo-name => 'Elucid8/Elucid8-sandpit',
             description => 'website sources',
             languages => %(
                 en => %(

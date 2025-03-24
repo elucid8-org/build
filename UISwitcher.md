@@ -17,7 +17,7 @@
 
 <span class="para" id="90d0fcb"></span>All Elucid8 plugins that provide templates which have user facing text should replace any such user-facing that text with a `ui-token`. These tokens are replaced in the browser by a JS script from a dictionary that is itself generated at render time from the `ui-tokens`. 
 
-<span class="para" id="6cc075d"></span>At install time, the dictionary is created from the `ui-tokens` in each plugin, then stored in the `L10N` directory. 
+<span class="para" id="4f14ad4"></span>At install time, the dictionary is created from the `ui-tokens` in each plugin, then stored in the `Misc` directory. 
 
 <span class="para" id="0e95a1a"></span>The dictionary is then added to by translating the keys in the canonical language. 
 
@@ -101,7 +101,7 @@
 
 1. <span class="para" id="3b2f84a"></span>the `ui-tokens` and their canonical values are collected from each plugin  
 
-2. <span class="para" id="f1797eb"></span>The **__L10N__** directory is checked for the existence of a file called **dictionary.rakuon**.  
+2. <span class="para" id="c43ac1d"></span>The **__Misc__** directory is checked for the existence of a file called **dictionary.rakuon**.  
 
 2.1. If the dictionary file exists, then the dictionary object is created from the file  
 
@@ -121,7 +121,7 @@
 
 ----
 
-Rendered from docs/UISwitcher.rakudoc/UISwitcher at 11:38 UTC on 2025-01-02
+Rendered from docs/UISwitcher.rakudoc/UISwitcher at 20:19 UTC on 2025-03-24
 
-Source last modified at 21:29 UTC on 2025-01-01
+Source last modified at 09:24 UTC on 2025-03-16
 

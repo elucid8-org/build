@@ -1,7 +1,7 @@
 %(
     plugin-options => %(
         cro-app => %( # for run-locally
-            :port( 5000 ),
+            :port( 3000 ),
             :host<0.0.0.0>,
             :url-map<assets/prettyurls assets/deprecated-urls>,
         ),

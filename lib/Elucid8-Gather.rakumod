@@ -74,7 +74,7 @@ multi sub MAIN (
         @withs.append: %config<glues>.keys
     }
     my Git::Blame::File $blame-info;
-    my $to-stem = %config<sources>;
+    my $to-stem = %config<publication>;
     for %config<repositories>.kv -> $local-repo-name, %repo-config {
         my $repo-stem = "$repo-dir/$local-repo-name/";
         $repo-stem = '' if $local-repo-name eq 'self';
@@ -82,9 +82,10 @@ multi sub MAIN (
             # @transfers may contain directories too
             %repo-info{$lang} = %() unless %repo-info{ $lang }:exists;
             my %update := %repo-info{ $lang }.hash;
-            my $from-stem = $repo-stem ~ %lang-info<source-entry>;
-            my $to = $to-stem ~ '/' ~ $lang ~ '/';
-            $to ~= "$_/" with %lang-info<destination>;
+            my $rep-entry = %lang-info<source-entry>:exists ?? ( %lang-info<source-entry> ~ '/' )!! '';
+            my $from-stem = $repo-stem ~ $rep-entry;
+            my $to = "$to-stem/$lang";
+            $to ~= "/$_" with %lang-info<destination>;
             # only transfer selected, if exists
             my @transfers;
             if %lang-info<select>:exists {
@@ -102,21 +103,30 @@ multi sub MAIN (
                     next
                 }
                 next unless $next.Str.ends-with('.rakudoc');
-                next if @withs.elems and $next.relative($from-stem).IO.extension('') eq @withs.none;
-                next if @ignores.elems and $next.relative($from-stem).IO.extension('') eq @ignores.any;
+                my $short = $next.relative($from-stem).IO.extension('').Str;
+                next if @withs.elems and $short eq @withs.none;
+                next if @ignores.elems and $short eq @ignores.any;
                 # operate on filtered files
-                my $link-name = $to ~ $next.relative($from-stem);
-                mktree $link-name.IO.dirname;
-                $next.symlink($link-name) unless $link-name.IO ~~ :e;
                 $blame-info .= new($next.Str);
-                # since all files here are extension .rakudoc, not need tor extension here
-                my $key = $next.extension('');
-                %update{$key}<modified> = $blame-info.modified;
-                %update{$key}<path> = $next.relative($from-stem);
-                %update{$key}<repo-prefix> =
-                    %lang-info<path-edit-prefix>
-                    // "htps://github.com/{%repo-config<repo-name>}/edit/main/"
-                ;
+                # in Raku documentation key and short may differ
+                my $path = $short;
+                if %lang-info<destination-modify>:exists {
+                    use MONKEY;
+                    $path = EVAL( %lang-info<destination-modify> ).($short);
+                    no MONKEY
+                }
+                %update{$short}{ .key } = .value for %(
+                    modified => $blame-info.modified,
+                    from-path => $next.relative,
+                    to-path => "$to/$path",
+                    route => "/$path",
+                    repo-path =>
+                        (
+                        %lang-info<path-edit-prefix>
+                        //
+                        "https://github.com/{%repo-config<repo-name>}/edit/main/"
+                        ) ~ $rep-entry ~ $next.relative($from-stem),
+                ).pairs;
             }
         }
     }

@@ -39,10 +39,11 @@ method create-site-map( $rdp, %site-config ) {
             use MONKEY-SEE-NO-EVAL;
             $mod = EVAL $mod if $mod.isa(Str);
             no MONKEY-SEE-NO-EVAL;
-            $mod .= DateTime.yyyy-mm-dd;
+            $mod .= yyyy-mm-dd;
+            my $route = %info<route> // $fn;
             $sitemap ~= qq:to/URL/;
                 <url>
-                    <loc>$root/$lang$fn.html\</loc>
+                    <loc>$root/$lang$route.html\</loc>
                     <lastmod>$mod\</lastmod>
                     <priority>$priority\</priority>
                 </url>

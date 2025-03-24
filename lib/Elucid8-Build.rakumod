@@ -119,6 +119,12 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         if $repo-url.IO ~~ :e & :f {
             %!sources = EVALFILE $repo-url;
             @!derived-langs = %!sources.keys.grep({ $_ ne $!canonical });
+            # eval DateTime
+            use MONKEY;
+            %!sources.duckmap( -> %a where *.<modified>.isa(Str) {
+                %a<modified> = EVAL( %a<modified> )
+            } );
+            no MONKEY;
         }
         else {
             my @todo = $!src.IO.dir
@@ -142,9 +148,11 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                         my $lang = $path.dirname.split('/').[1];
                         my $short = $path.relative($!src).IO.relative($lang).IO.extension('');
                         %!sources{$lang}{$short} = %(
-                            :$path,
+                            from-path => $path,
+                            to-path => "$!to/$lang/$short\.html",
                             modified => $path.modified.DateTime,
-                            repo-prefix => '',
+                            repo-path => '',
+                            route => "/$short",
                         )
                     }
                 }
@@ -156,7 +164,6 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method render-files {
-        mktree $!to unless $!to.IO ~~ :e & :d;
         @!withs = %!config<with-only>.comb( / \S+ /);
         %!glues = %!config<glues>;
         my @canon-changes;
@@ -194,15 +201,14 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             .hash.kv
             -> $short, %info
             {
-            with $short.IO.dirname { mktree "$!to/$lang/$_" unless "$!to/$lang/$_".IO ~~ :e & :d }
-            my $rendered-io = "$!to/$lang/$short\.html".IO;
+            my $rendered-io = (%info<to-path> ~ '.html').IO;
             my $do-file = $!f || ($!rdp.file-data{$lang}{$short}:!exists)
                              || !$rendered-io.f
-                             || %info<modified> > $rendered-io.modified
+                             || %info<modified> > $rendered-io.modified.DateTime
                              || ( $canon.not and $short (elem) @canon-changes )
                              ;
             %info<type> = 'primary';
-            self.render-file($lang, $short, %info, $rendered-io) if $do-file;
+            self.render-file($lang, $short, %info) if $do-file;
             @canon-changes.push( $short ) if $canon and $do-file;
             $changes ||= $do-file
         }
@@ -223,17 +229,15 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             .hash.kv
             -> $short, %info
             {
-            my $rendered-io = $short.subst(/ ^ \w /, *.lc ); # substitution only needed for Raku documentation
-            $rendered-io = "$!to/$lang/$rendered-io\.html".IO;
-            with $rendered-io.dirname { mktree $_ unless .IO ~~ :e & :d }
+            my $rendered-io = (%info<to-path> ~ '.html').IO;
             my $do-file = $!f                        # force flag is set
                         || $changes                  # a lower order glue file has been changed
                         || ($rdp.file-data{$lang}{$short}:!exists) # the file has not be rendered before
                         || !$rendered-io.f           # the rendered file does not exist
-                        || %info<modified> > $rendered-io.modified # rendered file is older than source
+                        || %info<modified> > $rendered-io.modified.DateTime # rendered file is older than source
                         ;
             %info<type> = 'glue';
-            self.render-file($lang, $short, %info, $rendered-io) if $do-file;
+            self.render-file($lang, $short, %info) if $do-file;
             $changes ||= $do-file
         }
         $changes
@@ -267,9 +271,9 @@ class Elucid8::Engine is RakuDoc::To::HTML {
                 @glue-files.push: [ .key,
                     %!config<language-list>{ .key },
                     (.value.pairs.grep({ .key eq any( %!glues.keys ) })
-                                .sort({ %!glues{ .key } }).reverse
-                                .map({ ( .value<title subtitle path>:p.Slip, :path( .key ) ).Hash })
-                                ).Array
+                        .sort({ %!glues{ .key } }).reverse
+                        .map({ ( .value<title subtitle path>:p.Slip, :path( .key ) ).Hash })
+                    ).Array
                 ]
         }
         %autof<meta> = @glue-files;
@@ -284,7 +288,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my Bool $got = $!landing-source.so;
         my $ast = ($got ?? $!landing-source !! $auto-rakudoc).AST;
         my $path = $got ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916"; # robot face
-        my $modified = $got ?? $path.IO.modified !! now;
+        my $modified = $got ?? $path.IO.modified.DateTime !! now.DateTime;
         $rdp.pre-process( '*', $!landing-page, $ast );
         my $processed = $rdp.render(
             $ast,
@@ -306,28 +310,36 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         );
     }
 
-    method render-file($language, $short, %info, $rendered-io) {
-        say "rendering { %info<path> } to $rendered-io";
-        my $path := %info<path>;
-        my $ast = $path.slurp.AST;
+    method render-file($language, $short, %info) {
+        say "rendering { %info<from-path> } to { %info<to-path> }.html";
+        my $ast = %info<from-path>.IO.slurp.AST;
         my $rdp := $!rdp;
         my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/" ) ~ $!landing-page;
+        unless $rdp.file-data{$language}{$short}:exists {
+            $rdp.file-data{$language}{$short} = %info.clone
+        }
         $rdp.pre-process( $language, $short, $ast );
         my $processed = $rdp.render($ast, :source-data(%(
             name => $short,
             modified => %info<modified>,
-            :$path,
+            :path( %info<to-path> ),
+            :repo-path( %info<repo-path> ),
             :$language,
             :$home-page,
             type => %info<type>,
         )), :pre-finalised);
+        my $rendered-io = (%info<to-path> ~ '.html').IO;
+        with $rendered-io.IO.dirname { mktree $_ unless $_.IO ~~ :e & :d }
         $rendered-io.spurt($rdp.finalise);
+        my $type = $processed.source-data<rakudoc-config><type>:exists ??
+            $processed.source-data<rakudoc-config><type>
+            !! %info<type>
+        ;
         $rdp.file-data{$language}{$short}{ .key } = .value for %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
-            modified => %info<modified>,
-            type => $processed.source-data<rakudoc-config><type>:exists ?? $processed.source-data<rakudoc-config><type> !! %info<type>,
+            :$type,
         ).pairs;
     }
 }
@@ -380,18 +392,18 @@ multi sub MAIN(
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
     %config<with-only> = $_ with $with-only; # only over-ride if set
+    if $regenerate-from-scratch {
+        say "Rebuilding from scratch. May take a little longer.";
+        my $ok = empty-directory %config<publication>;
+        $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
+        exit note('Could not delete old build output') unless $ok
+    }
     # created deprecated url map
     unless (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
     # create the server-centric files for Caddy & Cro run-locally by default
         mktree %config<publication> ~ '/' ~ NAV_DIR;
         (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
             %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
-    }
-    if $regenerate-from-scratch {
-        say "Rebuilding from scratch. May take a little longer.";
-        my $ok = empty-directory %config<publication>;
-        $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
-        exit note('Could not delete old build output') unless $ok
     }
     my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose );
     $engine.process-all
