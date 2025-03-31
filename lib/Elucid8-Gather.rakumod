@@ -126,6 +126,12 @@ multi sub MAIN (
                         //
                         "https://github.com/{%repo-config<repo-name>}/edit/main/"
                         ) ~ $rep-entry ~ $next.relative($from-stem),
+                    repo-raw-content-path =>
+                    (
+                    %lang-info<path-raw-prefix>
+                            //
+                            "https://raw.githubusercontent.com/{%repo-config<repo-name>}/refs/heads/main/"
+                    ) ~ $rep-entry ~ $next.relative($from-stem),
                 ).pairs;
             }
         }
