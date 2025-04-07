@@ -320,7 +320,9 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             $rdp.file-data{$language}{$short} = %source-data
         }
         $rdp.pre-process( $language, $short, $ast );
-        %source-data ,= :$language, :$home-page, :name($short);
+        %source-data<language> = $language;
+        %source-data<home-page> = $home-page;
+        %source-data<name> = $short;
         my $processed = $rdp.render($ast, :%source-data, :pre-finalised);
         my $rendered-io = (%info<to-path> ~ '.html').IO;
         with $rendered-io.IO.dirname { mktree $_ unless $_.IO ~~ :e & :d }
