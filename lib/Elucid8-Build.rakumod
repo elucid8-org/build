@@ -315,19 +315,13 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my $ast = %info<from-path>.IO.slurp.AST;
         my $rdp := $!rdp;
         my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/" ) ~ $!landing-page;
+        my %source-data = %info.clone;
         unless $rdp.file-data{$language}{$short}:exists {
-            $rdp.file-data{$language}{$short} = %info.clone
+            $rdp.file-data{$language}{$short} = %source-data
         }
         $rdp.pre-process( $language, $short, $ast );
-        my $processed = $rdp.render($ast, :source-data(%(
-            name => $short,
-            modified => %info<modified>,
-            :path( %info<to-path> ),
-            :repo-path( %info<repo-path> ),
-            :$language,
-            :$home-page,
-            type => %info<type>,
-        )), :pre-finalised);
+        %source-data ,= :$language, :$home-page, :name($short);
+        my $processed = $rdp.render($ast, :%source-data, :pre-finalised);
         my $rendered-io = (%info<to-path> ~ '.html').IO;
         with $rendered-io.IO.dirname { mktree $_ unless $_.IO ~~ :e & :d }
         $rendered-io.spurt($rdp.finalise);
