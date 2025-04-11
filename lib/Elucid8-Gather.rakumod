@@ -120,18 +120,8 @@ multi sub MAIN (
                     from-path => $next.relative,
                     to-path => "$to/$path",
                     route => "/$path",
-                    repo-path =>
-                        (
-                        %lang-info<path-edit-prefix>
-                        //
-                        "https://github.com/{%repo-config<repo-name>}/edit/main/"
-                        ) ~ $rep-entry ~ $next.relative($from-stem),
-                    repo-raw-content-path =>
-                    (
-                    %lang-info<path-raw-prefix>
-                            //
-                            "https://raw.githubusercontent.com/{%repo-config<repo-name>}/refs/heads/main/"
-                    ) ~ $rep-entry ~ $next.relative($from-stem),
+                    repo-name => %repo-config<repo-name>,
+                    repo-path => $rep-entry ~ $next.relative($from-stem),
                 ).pairs;
             }
         }
