@@ -82,7 +82,7 @@ multi sub MAIN (
             # @transfers may contain directories too
             %repo-info{$lang} = %() unless %repo-info{ $lang }:exists;
             my %update := %repo-info{ $lang }.hash;
-            my $rep-entry = %lang-info<source-entry>:exists ?? ( %lang-info<source-entry> ~ '/' )!! '';
+            my $rep-entry = %lang-info<source-entry>:exists ?? ( %lang-info<source-entry> )!! '';
             my $from-stem = $repo-stem ~ $rep-entry;
             my $to = "$to-stem/$lang";
             $to ~= "/$_" with %lang-info<destination>;
@@ -119,7 +119,7 @@ multi sub MAIN (
                     modified => $blame-info.modified,
                     from-path => $next.relative,
                     to-path => "$to/$path",
-                    route => "/$path",
+                    route => ("/$_" with %lang-info<destination> ) ~ "/$path",
                     repo-name => %repo-config<repo-name>,
                     repo-path => $rep-entry ~ $next.relative($from-stem),
                 ).pairs;

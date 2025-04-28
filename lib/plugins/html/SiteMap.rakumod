@@ -26,7 +26,7 @@ method create-site-map( $rdp, %site-config ) {
     START
     my $priority;
     for %filedata.kv -> $lg, %files {
-        my $lang =  $lg eq '*' ?? '' !! "$lg/";
+        my $lang =  $lg eq '*' ?? '' !! "$lg";
         for %files.kv -> $fn, %info {
             given %info<type> {
                 when 'glue' { $priority = 0.8 }
