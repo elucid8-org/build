@@ -1,7 +1,7 @@
 {
     "name": "Elucid8::Build",
     "description": "Renders RakuDoc sources in multiple languages to web site",
-    "version": "0.10.12",
+    "version": "0.11.0",
     "raku": "6.d",
     "authors": [
         "Richard Hainsworth"
@@ -11,10 +11,6 @@
         "Rakuast::RakuDoc::Render",
         "RakuConfig",
         "PrettyDump",
-        "File::Directory::Tree",
-        "Cro::HTTP::Router",
-        "Cro::HTTP::Server",
-        "Cro::HTTP::Log::File",
         "Git::Blame::File"
     ],
     "test-depends": [
@@ -27,7 +23,6 @@
         "Elucid8::Plugin::HTML::UISwitcher": "lib/plugins/html/UISwitcher.rakumod",
         "Elucid8::Plugin::HTML::SiteMap": "lib/plugins/html/SiteMap.rakumod",
         "Elucid8-Add-ui-lang": "lib/tools/add-ui-lang.rakumod",
-        "RunCroApp": "lib/tools/RunCroApp.rakumod",
         "Elucid8-Gather": "lib/Elucid8-Gather.rakumod"
     },
     "resources": [
