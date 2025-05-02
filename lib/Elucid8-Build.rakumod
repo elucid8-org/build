@@ -111,7 +111,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         else { $!rdp.gather-flatten( 'css', :@reserved) }
         %d<UISwitcher><gather-ui-tokens>.( $!rdp, %!config );
         %d<UISwitcher><add-languages>.( %!config );
-        $!rdp.gather-flatten(<css-link js-link js>, :@reserved );
+        $!rdp.gather-flatten(<css-link js-link js js-module>, :@reserved );
     }
 
     method process-all {
