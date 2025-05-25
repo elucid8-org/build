@@ -1,7 +1,7 @@
 {
     "name": "Elucid8::Build",
     "description": "Renders RakuDoc sources in multiple languages to web site",
-    "version": "0.11.1",
+    "version": "0.12.0",
     "raku": "6.d",
     "authors": [
         "Richard Hainsworth"

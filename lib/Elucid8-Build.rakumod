@@ -372,7 +372,7 @@ multi sub MAIN(
     Str :$debug = 'None',     #= RakuAST-RakuDoc-Render debug list
     Str :$verbose = '',       #= RakuAST-RakuDoc-Render verbose parameter
     Str :$with-only,          #= only render these files, over-rides the config value
-    Bool :$regenerate-from-scratch = False ,
+    Bool :$regenerate-from-scratch = True ,
                               #= delete any previous rendering and file data. Long process
 ) {
     my %config;
@@ -388,7 +388,8 @@ multi sub MAIN(
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
     %config<with-only> = $_ with $with-only; # only over-ride if set
-    if $regenerate-from-scratch {
+    %config<regenerate-from-scratch> = $_ with $regenerate-from-scratch; # only over-ride if set
+    if %config<regenerate-from-scratch> {
         say "Rebuilding from scratch. May take a little longer.";
         my $ok = empty-directory %config<publication>;
         $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
