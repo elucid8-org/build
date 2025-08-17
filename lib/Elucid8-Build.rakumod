@@ -389,7 +389,7 @@ multi sub MAIN(
     }
     %config<with-only> = $_ with $with-only; # only over-ride if set
     %config<regenerate-from-scratch> = $_ with $regenerate-from-scratch; # only over-ride if set
-    if %config<regenerate-from-scratch> {
+    if %config<regenerate-from-scratch> and "{%config<misc>}/{%config<file-data-name>}".IO.e {
         say "Rebuilding from scratch. May take a little longer.";
         my $ok = empty-directory %config<publication>;
         $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
