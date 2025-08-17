@@ -8,8 +8,7 @@ proto sub MAIN ( |c ) is export {*}
 multi sub MAIN (
         Bool :version(:$v)! #= provides the version of the distribution
 ) {
-    say 'Using version ', $?DISTRIBUTION.meta<version>, ' of elucid8-build distribution.' if $v;
-    say 'Rakudoc::Processor version: ', RakuDoc::Processor.^ver
+    say 'Using version ', $?DISTRIBUTION.meta<version>, ' of elucid8-build distribution.' if $v
 }
 multi sub MAIN (
         :$config = 'config',      #= localised config file

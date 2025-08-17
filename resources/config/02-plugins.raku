@@ -12,18 +12,15 @@
         RakuDoc::Plugin::HTML::SCSS
         Elucid8::Plugin::HTML::UISwitcher
         Elucid8::Plugin::HTML::AutoIndex
+        Elucid8::Plugin::HTML::SiteMap
     >,
     setup => (# sequence not hash because order can matter
-        RakuREPL => 'set-host-port',
     ),
     pre-file-render => (# sequence not hash because order can matter
-        SiteData => 'initialise',
     ),
     post-file-render => (# sequence not hash because order can matter
     ),
     post-all-content-files => (# sequence not hash because order can matter
-        SiteData => 'gen-composites',
-        Search => 'prepare-search-data',
     ),
     post-all-files => ( # sequence because order matters
     )
