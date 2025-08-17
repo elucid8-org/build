@@ -72,7 +72,7 @@ multi sub MAIN (
     if @withs.elems {
         @withs.append: %config<glues>.keys
     }
-    my Git::Blame::File $blame-info;
+    my $modified;
     my $to-stem = %config<publication>;
     for %config<repositories>.kv -> $local-repo-name, %repo-config {
         my $repo-stem = "$repo-dir/$local-repo-name/";
@@ -106,7 +106,10 @@ multi sub MAIN (
                 next if @withs.elems and $short eq @withs.none;
                 next if @ignores.elems and $short eq @ignores.any;
                 # operate on filtered files
-                $blame-info .= new($next.Str);
+                try { Git::Blame::File.new($next.Str).modified }
+                if $! {
+                    $modified = now.DateTime
+                }
                 # in Raku documentation key and short may differ
                 my $path = $short;
                 if %lang-info<destination-modify>:exists {
@@ -115,7 +118,7 @@ multi sub MAIN (
                     no MONKEY
                 }
                 %update{$short}{ .key } = .value for %(
-                    modified => $blame-info.modified,
+                    :$modified,
                     from-path => $next.relative,
                     to-path => "$to/$path",
                     route => ("/$_" with %lang-info<destination> ) ~ "/$path",
