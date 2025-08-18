@@ -57,7 +57,8 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     has @!withs;            #| files to be rendered when restricted
     has %!glues;            #| glue files and their order
     has @!post-all-content-files; #| callables that operate after all content files have been processed
-    has @!post-all-files; #| callables that operate after all content & glue files have been processed
+    has @!post-all-files;   #| callables that operate after all content & glue files have been processed
+    has Bool $!trace = False; #| Only output 'say' when $!trace = True
 
     submethod TWEAK( :%!config, :$!f ) {
         $!src = %!config<sources>;
@@ -189,7 +190,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             dictionary-store( $!rdp.file-data, $!file-data-name);
             .( $!rdp, %!config ) for @!post-all-files
         }
-        else { say 'Nothing has changed' }
+        else { say 'Nothing has changed' if $!trace }
     }
 
     method render-contents( $lang, @canon-changes, Bool :$canon = False --> Bool ) {
@@ -284,7 +285,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         =for AutoIndex :!toc
         =end rakudoc
         AUTO
-        say "rendering website root $!landing-page";
+        say "rendering website root $!landing-page" if $!trace;
         my Bool $got = $!landing-source.so;
         my $ast = ($got ?? $!landing-source !! $auto-rakudoc).AST;
         my $path = $got ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916"; # robot face
@@ -311,7 +312,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method render-file($language, $short, %info) {
-        say "rendering { %info<from-path> } to { %info<to-path> }.html";
+        say "rendering { %info<from-path> } to { %info<to-path> }.html" if $!trace;
         my $ast = %info<from-path>.IO.slurp.AST;
         my $rdp := $!rdp;
         my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/" ) ~ $!landing-page;
@@ -374,6 +375,7 @@ multi sub MAIN(
     Str :$with-only,          #= only render these files, over-rides the config value
     Bool :$regenerate-from-scratch = True ,
                               #= delete any previous rendering and file data. Long process
+    Bool :$trace = False,     #= only print intermediate output when True
 ) {
     my %config;
     if $config.IO ~~ :e & :d {
@@ -390,7 +392,7 @@ multi sub MAIN(
     %config<with-only> = $_ with $with-only; # only over-ride if set
     %config<regenerate-from-scratch> = $_ with $regenerate-from-scratch; # only over-ride if set
     if %config<regenerate-from-scratch> and "{%config<misc>}/{%config<file-data-name>}".IO.e {
-        say "Rebuilding from scratch. May take a little longer.";
+        say "Rebuilding from scratch. May take a little longer." if $trace;
         my $ok = empty-directory %config<publication>;
         $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
         exit note('Could not delete old build output') unless $ok
@@ -402,6 +404,6 @@ multi sub MAIN(
         (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
             %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
-    my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose );
+    my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose, :$trace );
     $engine.process-all
 }
