@@ -106,7 +106,7 @@ multi sub MAIN (
                 next if @withs.elems and $short eq @withs.none;
                 next if @ignores.elems and $short eq @ignores.any;
                 # operate on filtered files
-                try { Git::Blame::File.new($next.Str).modified }
+                try { $modified = Git::Blame::File.new($next.Str).modified }
                 if $! {
                     $modified = now.DateTime
                 }
