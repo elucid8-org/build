@@ -115,7 +115,6 @@ multi sub MAIN (
                 if %lang-info<destination-modify>:exists {
                     use MONKEY;
                     $path = EVAL( %lang-info<destination-modify> ).($short);
-                    no MONKEY
                 }
                 %update{$short}{ .key } = .value for %(
                     :$modified,
