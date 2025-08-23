@@ -1,0 +1,22 @@
+=begin rakudoc
+=TITLE Minimal Site with Elucid8
+=SUBTITLE A minimal index page
+=for AUTHOR :hidden
+Richard Hainsworth, aka finanalyst
+
+=for VERSION :hidden
+v 0.1.0
+
+This is a page so that a minimal site can be created.
+
+RakuDoc is a human-readable markup language that has markup and customisation
+included.
+
+The L<compliance document|rakudociem-ipsum> for RakuDoc v2 has examples of as many as possible RakuDoc features.
+
+The RakuDoc renderer used by I<Elucid8> is B<Rakuast::RakuDoc::Render> and it implements all of the
+mandatory elements. It also implements many additional blocks, which can be seen in
+L<RakuDoc extras example|examples>.
+
+=end rakudoc
+

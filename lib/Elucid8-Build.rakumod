@@ -349,7 +349,7 @@ multi sub MAIN(
 ) {
     my $path = $config.IO.mkdir;
     my $resource;
-    my @defaults = <01-base.raku 02-plugins.raku 03-plugin-options.raku>;
+    my @defaults = <01-base.raku 02-plugins.raku 03-plugin-options.raku 03-repositories.raku>;
     for @defaults {
         $resource := %?RESOURCES{ "config/$_" };
         indir $path, {.IO.spurt( $resource.slurp(:close) )}
@@ -357,7 +357,12 @@ multi sub MAIN(
     my %options = get-config(:$path);
     # create the necessary directory structure from the config
     mktree %options<misc>;
-    mktree %options<sources> ~ '/' ~ %options<canonical>;
+    $path = %options<site-sources> ~ '/' ~ %options<canonical>;
+    mktree $path;
+    for <examples.rakudoc index.rakudoc> {
+        $resource := %?RESOURCES{ "minimal/$_" };
+        indir $path, {.IO.spurt( $resource.slurp(:close) )}
+    }
 }
 
 multi sub MAIN(

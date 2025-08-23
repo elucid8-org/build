@@ -1,7 +1,7 @@
 %(
     plugin-options => %(
         SiteMap => %(
-            :root-domain<https://docs.raku.org>,
+            :root-domain<https://mysite.org>,
         ),
     ),
 )

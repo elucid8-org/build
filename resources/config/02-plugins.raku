@@ -10,6 +10,7 @@
         RakuDoc::Plugin::HTML::Latex
         RakuDoc::Plugin::HTML::LeafletMaps
         RakuDoc::Plugin::HTML::SCSS
+        RakuDoc::Plugin::HTML::Bulma
         Elucid8::Plugin::HTML::UISwitcher
         Elucid8::Plugin::HTML::AutoIndex
         Elucid8::Plugin::HTML::SiteMap

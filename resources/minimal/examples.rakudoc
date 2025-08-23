@@ -1,0 +1,212 @@
+=begin rakudoc
+=TITLE Rakuast::RakuDoc::Render examples
+=for AUTHOR :hidden
+Richard Hainsworth, aka finanalyst
+
+=for VERSION :hidden
+v 0.1.0
+
+The power of the RakuDoc specification is that it allows for customisation.
+
+The Rakuast::RakuDoc::Render distribution contains a number of plugins to illustrate
+the customisation.
+
+Since each of these customisations are included in the Render's distribution, they
+may all be used in RakuDoc sources.
+
+=nested Blocknames with mixed upper and lower case names are customised, and they should
+not be expected to exist in other RakuDoc renderers (though no other renderers of RakuDoc v2
+currently exist E<Winking Face>).
+
+=head Graphviz
+
+The following is taken
+from L<GraphViz.org's gallery | https://graphviz.org/gallery>.
+
+=begin Graphviz :headlevel(2) :caption<Cluster gradients>
+digraph G {bgcolor="#0000FF44:#FF000044" gradientangle=90
+	fontname="Helvetica,Arial,sans-serif"
+	node [fontname="Helvetica,Arial,sans-serif"]
+	edge [fontname="Helvetica,Arial,sans-serif"]
+
+	subgraph cluster_0 {
+		style=filled;
+		color=lightgrey;
+		fillcolor="darkgray:gold";
+		gradientangle=0
+		node [fillcolor="yellow:green" style=filled gradientangle=270] a0;
+		node [fillcolor="lightgreen:red"] a1;
+		node [fillcolor="lightskyblue:darkcyan"] a2;
+		node [fillcolor="cyan:lightslateblue"] a3;
+
+		a0 -> a1 -> a2 -> a3;
+		label = "process #1";
+	}
+
+	subgraph cluster_1 {
+		node [fillcolor="yellow:magenta"
+			 style=filled gradientangle=270] b0;
+		node [fillcolor="violet:darkcyan"] b1;
+		node [fillcolor="peachpuff:red"] b2;
+		node [fillcolor="mediumpurple:purple"] b3;
+
+		b0 -> b1 -> b2 -> b3;
+		label = "process #2";
+		color=blue
+		fillcolor="darkgray:gold";
+		gradientangle=0
+		style=filled;
+	}
+	start -> a0;
+	start -> b0;
+	a1 -> b3;
+	b2 -> a3;
+	a3 -> a0;
+	a3 -> end;
+	b3 -> end;
+
+	start [shape=Mdiamond ,
+		fillcolor="pink:red",
+		gradientangle=90,
+		style=radial];
+	end [shape=Msquare,
+		fillcolor="lightyellow:orange",
+		style=radial,
+		gradientangle=90];
+}
+=end Graphviz
+
+For more information see L<Graphviz block| https://finanalyst.github.io/plugins/Graphviz>
+The diagram L<source| https://graphviz.org/Gallery/gradient/cluster.html> is included in a Rakudoc source file as:
+=begin code :lang<RakuDoc>
+=begin Graphviz :headlevel(2) :caption<Cluster gradients>
+digraph G {bgcolor="#0000FF44:#FF000044" gradientangle=90
+	fontname="Helvetica,Arial,sans-serif"
+	node [fontname="Helvetica,Arial,sans-serif"]
+	edge [fontname="Helvetica,Arial,sans-serif"]
+
+	subgraph cluster_0 {
+		style=filled;
+		color=lightgrey;
+		fillcolor="darkgray:gold";
+		gradientangle=0
+		node [fillcolor="yellow:green" style=filled gradientangle=270] a0;
+		node [fillcolor="lightgreen:red"] a1;
+		node [fillcolor="lightskyblue:darkcyan"] a2;
+		node [fillcolor="cyan:lightslateblue"] a3;
+
+		a0 -> a1 -> a2 -> a3;
+		label = "process #1";
+	}
+
+	subgraph cluster_1 {
+		node [fillcolor="yellow:magenta"
+			 style=filled gradientangle=270] b0;
+		node [fillcolor="violet:darkcyan"] b1;
+		node [fillcolor="peachpuff:red"] b2;
+		node [fillcolor="mediumpurple:purple"] b3;
+
+		b0 -> b1 -> b2 -> b3;
+		label = "process #2";
+		color=blue
+		fillcolor="darkgray:gold";
+		gradientangle=0
+		style=filled;
+	}
+	start -> a0;
+	start -> b0;
+	a1 -> b3;
+	b2 -> a3;
+	a3 -> a0;
+	a3 -> end;
+	b3 -> end;
+
+	start [shape=Mdiamond ,
+		fillcolor="pink:red",
+		gradientangle=90,
+		style=radial];
+	end [shape=Msquare,
+		fillcolor="lightyellow:orange",
+		style=radial,
+		gradientangle=90];
+}
+=end Graphviz
+=end code
+
+=head Formalas using Latex
+
+Here is an example that uses the block C<LatexFormula>, and more detail can be found
+at L<Latex plugin|https://finanalyst.github.io/plugins/Latex>.
+
+=for LatexFormula :headlevel(2) :caption<Simple formula>
+\begin{align*}
+\sum_{i=1}^{k+1} i^{3}
+&= \biggl(\sum_{i=1}^{n} i^{3}\biggr) +  i^3\\
+&= \frac{k^{2}(k+1)^{2}}{4} + (k+1)^3 \\
+&= \frac{k^{2}(k+1)^{2} + 4(k+1)^3}{4}\\
+&= \frac{(k+1)^{2}(k^{2} + 4k + 4)}{4}\\
+&= \frac{(k+1)^{2}(k+2)^{2}}{4}
+\end{align*}
+
+=head Leaflet maps
+
+Here is a map with defaults:
+=config LeafletMap :caption<Map with default settings>
+=LeafletMap
+
+For more examples, see L<Leaflet maps|https://finanalyst.github.io/plugins/LeafletMaps>
+
+=head Custom markup
+
+The Renderer recognises ℱV«<»>, where ℱ is U+2131, to access the Fontawesome free icons.
+See L<font search page|https://fontawesome.com/icons>.
+Make sure to filter for the free icons.
+
+=begin code :lang<text>
+Some FontAwesome icons
+
+ℱ<fas fa-ambulance> Example of ambulance
+
+ℱ<fas fa-car> Example of automobile
+
+ℱ<fas fa-bicycle> Example of bicycle
+
+ℱ<fas fa-bus> Example of bus
+
+ℱ<fas fa-truck> Example of truck
+
+ℱ<fas fa-wheelchair> Example of wheelchair
+
+ℱ<fas fab-accessible-icon> Example of accessible-icon (was wheelchair-alt in fontawesom v4)
+=end code
+
+Generates
+Some FontAwesome icons
+
+ℱ<fas fa-ambulance> Example of ambulance
+
+ℱ<fas fa-car> Example of automobile
+
+ℱ<fas fa-bicycle> Example of bicycle
+
+ℱ<fas fa-bus> Example of bus
+
+ℱ<fas fa-truck> Example of truck
+
+ℱ<fas fa-wheelchair> Example of wheelchair
+
+ℱ<fab fa-accessible-icon> Example of accessible-icon (was wheelchair-alt in fontawesome v4)
+
+FontAwesome has some other options.
+=begin code :lang<text>
+Train normal size ℱ<fas fa-train> Triple size train ℱ<fas fa-train fa-3x>
+
+An animated spinner ℱ<fas fa-sync fa-spin fa-3x fa-fw>
+=end code
+Generates
+
+Train normal size ℱ<fas fa-train> Triple size train ℱ<fas fa-train fa-3x>
+
+An animated spinner ℱ<fas fa-sync fa-spin fa-3x fa-fw>
+
+=end rakudoc

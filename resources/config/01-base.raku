@@ -1,5 +1,6 @@
 %(
-    :sources<sources>,      #| directory root of rakudoc source files
+    :sources<local-sources>,      #| directory root of rakudoc source files
+    :local-lib<local-lib>,  # directory containing local plugins.
     :file-data-name<file-data.rakuon>,
                             #| name of file that contains all the ToC, index, and other state data
                             #| for each source file that has been rendered. Intended to avoid
