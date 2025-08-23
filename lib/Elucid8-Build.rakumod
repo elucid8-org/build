@@ -363,6 +363,8 @@ multi sub MAIN(
         $resource := %?RESOURCES{ "minimal/$_" };
         indir $path, {.IO.spurt( $resource.slurp(:close) )}
     }
+    $resource := %?RESOURCES{ "ui-dictionary.rakuon" };
+    indir 'misc', { "ui-dictionary.rakuon".IO.spurt( $resource.slurp(:close) ) }
 }
 
 multi sub MAIN(

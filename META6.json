@@ -30,7 +30,9 @@
         "config/02-plugins.raku",
         "config/03-plugin-options.raku",
         "config/04-repositories.raku",
-        "ui-dictionary.rakuon"
+        "ui-dictionary.rakuon",
+        "minimal/examples.rakudoc",
+        "minimal/index.rakudoc"
     ],
     "support": {
         "email": "richard@hainsworth.wales",
