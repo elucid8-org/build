@@ -7,14 +7,14 @@
             description => 'Rakudoc specification document',
             languages => %(
                 en => %(
-                    source-entry => 'compliance-document',
+                    source-entry => '/',
                     destination => 'language',
-                    :select('rakudociem-ipsum',),
+                    :select('rakudoc_v2',),
                 ),
             ),
         ),
         'self' => %( # meaning this repository
-            repo-name => 'elucid8-org/sandpit',
+            repo-name => 'elucid8-org/minimal',
             description => 'website sources',
             languages => %(
                 en => %(

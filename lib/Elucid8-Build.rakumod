@@ -60,13 +60,15 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     has @!post-all-files;   #| callables that operate after all content & glue files have been processed
     has Bool $!trace = False; #| Only output 'say' when $!trace = True
 
-    submethod TWEAK( :%!config, :$!f ) {
+    submethod TWEAK( :%!config, :$!f, :$debug, :$verbose, :$trace ) {
         $!src = %!config<sources>;
         $!to = %!config<publication>;
         $!canonical = %!config<canonical>;
         $!file-data-name = %!config<misc> ~ '/' ~ %!config<file-data-name>;
         $!landing-page = %!config<landing-page>;
         $!rdp = Elucid8::Processor.new(:output-format<html>, :$!file-data-name);
+        $!rdp.debug( $debug ) if $debug;
+        $!rdp.verbose( $verbose ) with $verbose;
         $!rdp.add-templates( RakuDoc::To::HTML.new.html-templates, :source<RakuDoc::To::HTML>);
         $!rdp.add-plugins( %!config<plugins>.list );
         # for each plugin, check whether plugin-options are defined in the site config for the plugin
@@ -125,7 +127,6 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             %!sources.duckmap( -> %a where *.<modified>.isa(Str) {
                 %a<modified> = EVAL( %a<modified> )
             } );
-            no MONKEY;
         }
         else {
             my @todo = $!src.IO.dir
@@ -349,22 +350,26 @@ multi sub MAIN(
 ) {
     my $path = $config.IO.mkdir;
     my $resource;
-    my @defaults = <01-base.raku 02-plugins.raku 03-plugin-options.raku 03-repositories.raku>;
+    my @defaults = <01-base.raku 02-plugins.raku 03-plugin-options.raku 04-repositories.raku>;
     for @defaults {
         $resource := %?RESOURCES{ "config/$_" };
         indir $path, {.IO.spurt( $resource.slurp(:close) )}
     }
     my %options = get-config(:$path);
     # create the necessary directory structure from the config
-    mktree %options<misc>;
     $path = %options<site-sources> ~ '/' ~ %options<canonical>;
     mktree $path;
     for <examples.rakudoc index.rakudoc> {
         $resource := %?RESOURCES{ "minimal/$_" };
         indir $path, {.IO.spurt( $resource.slurp(:close) )}
     }
-    $resource := %?RESOURCES{ "ui-dictionary.rakuon" };
-    indir 'misc', { "ui-dictionary.rakuon".IO.spurt( $resource.slurp(:close) ) }
+    $path = %options<misc>;;
+    mktree $path;
+    for <ui-dictionary.rakuon favicon.ico> {
+        $resource := %?RESOURCES{ $_ };
+#        indir $path, { .IO.spurt( $resource.slurp(:close) ) }
+        $resource.copy: "$path/$_"
+    }
 }
 
 multi sub MAIN(
@@ -404,12 +409,16 @@ multi sub MAIN(
         $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
         exit note('Could not delete old build output') unless $ok
     }
-    # created deprecated url map
+    # create deprecated url map
     unless (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
     # create the server-centric files for Caddy & Cro run-locally by default
         mktree %config<publication> ~ '/' ~ NAV_DIR;
         (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
             %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
+    }
+    # transfer a favicon if it exists
+    if %config<favicon>.IO ~ :e & :f {
+        %config<favicon>.IO.copy: %config<publication> ~ '/' ~ NAV_DIR ~ '/favicon.ico';
     }
     my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose, :$trace );
     $engine.process-all

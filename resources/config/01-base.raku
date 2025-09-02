@@ -1,12 +1,13 @@
 %(
-    :sources<local-sources>,      #| directory root of rakudoc source files
+    :site-sources<site-sources>, #| rakudoc source files not in a repo
     :local-lib<local-lib>,  # directory containing local plugins.
     :file-data-name<file-data.rakuon>,
                             #| name of file that contains all the ToC, index, and other state data
                             #| for each source file that has been rendered. Intended to avoid
                             #| re-rendering every source when only some have been modified
     :canonical<en>,         #| sub-dir of sources with canonical content
-    :misc<misc>,            #| directory with translation information
+    :misc<misc>,            #| directory with information and favicon files
+    :favicon<misc/favicon.ico>, # location of favicon
     :ui-dictionary<ui-dictionary.rakuon>, #| name of dictionary with ui token and translations
     :extensions<rakudoc rakumod>, #| possible extension of rakudoc source
     :!quiet,                #| no output is required if True
