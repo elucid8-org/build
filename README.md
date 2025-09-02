@@ -8,6 +8,7 @@
 ## Table of Contents
 
 <a href="#SYNOPSIS">SYNOPSIS</a>   
+<a href="#Introduction_The_utility_elucid8-build_will_generate_a_static_website_according_to_the_configuration_in_the_Current_Working_Directory_(CWD).">Introduction The utility `elucid8-build` will generate a static website according to the [configuration](Configuration) in the Current Working Directory (CWD).</a>   
 <a href="#Assumptions">Assumptions</a>   
 <a href="#Plugins">Plugins</a>   
 <a href="#Render_workflow">Render workflow</a>   
@@ -20,84 +21,77 @@
 <div id="SYNOPSIS"></div>
 
 ## SYNOPSIS
-<span class="para" id="67e8bd0"></span>The component is part of the `Elucid8` distribution and is installed as 
-
+<span class="para" id="67e8bd0"></span>The component is part of the `Elucid8` distribution and is installed as   
 
 ```
-    zef install Elucid8-build
+    zef install Elucid8::Build Elucid8::Run-locally
 ```
-<span class="para" id="9bab2e6"></span>The utility `elucid8-build` will generate a static website according to the [configuration](Configuration) in the Current Working Directory (CWD). 
+<span class="para" id="298e1a0"></span>Elucid8-build needs Dart sass, and Cro.   
+<span class="para" id="d3cddaa"></span>A minimumal site can be generated in an empty directory with the following steps:1. elucid8-setup  
 
-<span class="para" id="192f918"></span>If the CWD is empty, `elucid8-build install` will create a default structure 
+2. gather-sources  
 
-<span class="para" id="7e52a22"></span>If the CWD has a custom (localised) config file, which may be any localised name, and the contents have the keys required (in English) but with localised values (eg. Kostom), then `elucid8-build --config=Kostom --install` then the subdirectories will be localised as well. 
+3. elucid8-build  
 
-<span class="para" id="5ca62c5"></span>Elucid8 may be used in two ways: 
+4. run-locally  
 
 
 
+
+<div id="Introduction The utility ``elucid8-build`` will generate a static website according to the [configuration](Configuration) in the Current Working Directory (CWD)."></div><div id="Introduction_The_utility_elucid8-build_will_generate_a_static_website_according_to_the_configuration_in_the_Current_Working_Directory_(CWD)."></div>
+
+## Introduction The utility `elucid8-build` will generate a static website according to the [configuration](Configuration) in the Current Working Directory (CWD).
+<span class="para" id="f818baf"></span>If the CWD is empty, `elucid8-setup` will create a default structure   
+<span class="para" id="7e52a22"></span>If the CWD has a custom (localised) config file, which may be any localised name, and the contents have the keys required (in English) but with localised values (eg. Kostom), then `elucid8-build --config=Kostom --install` then the subdirectories will be localised as well.   
+<span class="para" id="5ca62c5"></span>Elucid8 may be used in two ways:   
 1. <span class="para" id="3d08365"></span>All the RakuDoc sources are in the main website directory, under the `sources` subdirectory.  
 
 2. The RakuDoc sources may be located in various repositories.  
 
-<span class="para" id="cdacb20"></span>For the second scenario, the `gather-sources` utility is used first. See [Gather and Build](Build-Gather.md) for more information. 
-
-<span class="para" id="a2ec6fd"></span>Once the website has been built, the `run-locally` utility will serve the HTML files, and can be browsed in a browser as `localhost:3000`. (The port can be changed in the plugins-configuration config). 
-
-<span class="para" id="6db1721"></span>Run `elucid8-build -h` to get information on command line flags. 
-
-<span class="para" id="38b318e"></span>Subsequent calls to `elucid8-build` will only rebuild modified source files, but see *-f* and *-with-only*
-
+<span class="para" id="cdacb20"></span>For the second scenario, the `gather-sources` utility is used first. See [Gather and Build](Build-Gather.md) for more information.   
+<span class="para" id="5d63ebf"></span>Once the website has been built, the `run-locally` utility will serve the HTML files, and can be browsed in a browser as `localhost:5000`. (The port can be changed in the plugins-configuration config).   
+<span class="para" id="6db1721"></span>Run `elucid8-build -h` to get information on command line flags.   
+<span class="para" id="38b318e"></span>Subsequent calls to `elucid8-build` will only rebuild modified source files, but see *-f* and *-with-only*   
 <div id="Assumptions"></div>
 
 ## Assumptions
-<span class="para" id="e7ea0bd"></span>The Build component of Elucid8 assumes the following structure. 
-
+<span class="para" id="e7ea0bd"></span>The Build component of Elucid8 assumes the following structure.   
 
 ```
 sandpit                      # a test bed for a web site built with elucid8
     - config/                 # contains the website configuration
     - misc/                  # contains the dictionaries from the canonical to derived languages
-    - sources/               # Only directories containing language sources permitted here
+    - site-sources/               # Only directories containing language sources permitted here
       - canonical/           # RakuDoc content in canonical language, which is en by default
       - xx/                  # content in language with code xx
       - xx-YY/               # regional content in language with code xx-YY
 ```
-<span class="para" id="48e6de8"></span>All names in the structure, except for `config/`, may be modified by changing fields in the files in `config/`. 
-
-<span class="para" id="809d5b5"></span>The name of the **__config/__** directory may be changed by setting the `--config` option to `elucid8-build`. For example, if the canonical language is Mandarin, and the term used to mean 'config' is `布局`, then 
-
+<span class="para" id="48e6de8"></span>All names in the structure, except for `config/`, may be modified by changing fields in the files in `config/`.   
+<span class="para" id="809d5b5"></span>The name of the **__config/__** directory may be changed by setting the `--config` option to `elucid8-build`. For example, if the canonical language is Mandarin, and the term used to mean 'config' is `布局`, then   
 
 ```
 elucid8-build --config=<布局>
 ```
-<span class="para" id="5d77cc3"></span>will set the configuration directory *布局*. This will be called the *localised config*. 
-
+<span class="para" id="5d77cc3"></span>will set the configuration directory *布局*. This will be called the *localised config*.   
 <div id="Plugins"></div>
 
 ## Plugins
-<span class="para" id="016ad6d"></span>The following HTML plugins are available: 
-
-
-
+<span class="para" id="016ad6d"></span>The following HTML plugins are available:   
 1. <span class="para" id="8602167"></span>[UISwitcher](UISwitcher.md)  
 
 2. <span class="para" id="ad545ea"></span>SiteMap - creates `sitemap.xml` which can be read by robots  
 
 3. <span class="para" id="4ca8437"></span>AutoIndex - creates a `landing-page` file for the whole website from all glue files  
 
-<span class="para" id="bced907"></span>Each website can have its own plugins, stored in `local-lib` 
-
+<span class="para" id="bced907"></span>Each website can have its own plugins, stored in `local-lib`   
 
 <div id="Render workflow"></div><div id="Render_workflow"></div>
 
 ## Render workflow
-<span class="para" id="9b89ead"></span>For each human language (h-language), the sources files in the appropriately named sub-directory of `sources` (or local equivalent), each generate a separate web page. 
-
+<span class="para" id="9b89ead"></span>For each human language (h-language), the sources files in the appropriately named sub-directory of `sources` (or local equivalent), each generate a separate web page.   
 > <span class="para" id="4435ebe"></span>Elucid8 is being designed for large websites and currently these are not optimally viewed using the *single page* paradigm. In the future, this view may change, in which case, each source will generate a section of the page.
 
-<span class="para" id="f76fda4"></span>The source files in an h-language directory are of two sorts: 
-
+<span class="para" id="f76fda4"></span>The source files in an h-language directory are of two sorts:   
 
 <span style="font-weight: 600; font-style: italic">1.&nbsp;content</span>
 
@@ -115,10 +109,7 @@ elucid8-build --config=<布局>
 
 &nbsp;&nbsp;<span style="background-color: lightgrey;">the name of the web page that is the default for a browser. By default it is auto-generated from the TITLEs and SUBTITLEs of the glue files in each h-language. </span>
 
-<span class="para" id="08dbff7"></span>Consequently, 
-
-
-
+<span class="para" id="08dbff7"></span>Consequently,   
 1. content web pages must be generated first  
 
 2. info web pages must be generated next  
@@ -129,18 +120,12 @@ elucid8-build --config=<布局>
 
 5. if no content sources have changed since the last rendering, then glue web pages do not need to be re-generated, unless a glue source has itself been modified.  
 
-<span class="para" id="d06fe5e"></span>In addition, 
-
-
-
+<span class="para" id="d06fe5e"></span>In addition,   
 1. <span class="para" id="3991f70"></span>a change in a canonical content source should trigger a change of style in the [equivalent content file](Canonical&lt;->derived links)  
 
 2. editing of derived sources will be more frequent than editing of the canonical sources  
 
-<span class="para" id="f14308f"></span>For simplicity and initial development, the following are required: 
-
-
-
+<span class="para" id="f14308f"></span>For simplicity and initial development, the following are required:   
 1. glue sources must be exist for each language (no super-language glue sources)  
 
 2. the filename of each glue source must be the same in each directory  
@@ -149,10 +134,7 @@ elucid8-build --config=<布局>
 
 4. the name and generation order of each glue source is defined in the config directory  
 
-<span class="para" id="2b5f0c3"></span>Consequently, the render order is as follows: 
-
-
-
+<span class="para" id="2b5f0c3"></span>Consequently, the render order is as follows:   
 1. the canonical language sources must be rendered first  
 
 2. a content source is only re-generated if:  
@@ -192,26 +174,18 @@ elucid8-build --config=<布局>
 <div id="Configuration"></div>
 
 ## Configuration
-<span class="para" id="a656b92"></span>A directory called `config/` (or its preconfigured alternative) is required in the CWD. 
-
-<span class="para" id="4bc7a56"></span>The **__config/__** directory follows the conventions set out in the distribution `raku-config`. 
-
-<span class="para" id="8bd20b2"></span>If a *localised config* has been specified, then one key must be called by the same name, and must contain a hash in which the key is a key of the default (English) *config* and the value is a string that is a key in the localised config. 
-
-<span class="para" id="4a353e6"></span>If some of the keys in the default are missing in the localised config, then the value of the default config is used. 
-
-<span class="para" id="e636be1"></span>This allows for some or all of the configuration to be specified in a canonical language other than English. 
-
-<span class="para" id="affbede"></span>The full set of [configuration keys](All configuration keys) and their defaults are in English. 
-
-<span class="para" id="10bca45"></span>For example, suppose we have a web-site where Welsh is the canonical language and the *config* file is partially in Welsh. Suppose further that the build command is: 
-
+<span class="para" id="a656b92"></span>A directory called `config/` (or its preconfigured alternative) is required in the CWD.   
+<span class="para" id="4bc7a56"></span>The **__config/__** directory follows the conventions set out in the distribution `raku-config`.   
+<span class="para" id="8bd20b2"></span>If a *localised config* has been specified, then one key must be called by the same name, and must contain a hash in which the key is a key of the default (English) *config* and the value is a string that is a key in the localised config.   
+<span class="para" id="4a353e6"></span>If some of the keys in the default are missing in the localised config, then the value of the default config is used.   
+<span class="para" id="e636be1"></span>This allows for some or all of the configuration to be specified in a canonical language other than English.   
+<span class="para" id="affbede"></span>The full set of [configuration keys](All configuration keys) and their defaults are in English.   
+<span class="para" id="10bca45"></span>For example, suppose we have a web-site where Welsh is the canonical language and the *config* file is partially in Welsh. Suppose further that the build command is:   
 
 ```
     elucid8-build --config=ffurfwedd
 ```
-<span class="para" id="ccd1235"></span>Then in this case, the directory `ffurfwedd/` should contain a file, typically named *01-ffurfwedd.raku*, with the content: 
-
+<span class="para" id="ccd1235"></span>Then in this case, the directory `ffurfwedd/` should contain a file, typically named *01-ffurfwedd.raku*, with the content:   
 
 ```
     ffurfwedd => %(
@@ -220,8 +194,7 @@ elucid8-build --config=<布局>
         Misc => 'lleoliad',
     )
 ```
-<span class="para" id="67ecc08"></span>Then the web-site would need to be structured as follows 
-
+<span class="para" id="67ecc08"></span>Then the web-site would need to be structured as follows   
 
 ```
 <web-site directory>/
@@ -233,16 +206,13 @@ elucid8-build --config=<布局>
     |- gofyddebol/
     |- en-GB/
 ```
-<span class="para" id="6192fe5"></span>The **config** directory and its contents are needed because the localised config is incomplete. 
-
-<span class="para" id="a2b1488"></span>If **all** the mandatory config keys are defined in the *localised config*, and all the keys have values, then the default can be removed. 
-
+<span class="para" id="6192fe5"></span>The **config** directory and its contents are needed because the localised config is incomplete.   
+<span class="para" id="a2b1488"></span>If **all** the mandatory config keys are defined in the *localised config*, and all the keys have values, then the default can be removed.   
 
 <div id="All configuration keys"></div><div id="All_configuration_keys"></div>
 
 ### All configuration keys
-<span class="para" id="56d1481"></span>The following is a list of all the mandatory config keys and their default values. 
-
+<span class="para" id="56d1481"></span>The following is a list of all the mandatory config keys and their default values.   
 
  | **Key name** | **Value** | **Description** |
 | :---: | :---: | :---: |
@@ -279,7 +249,7 @@ Richard Hainsworth, aka finanalyst
 
 ----
 
-Rendered from docs/README.rakudoc/README at 20:27 UTC on 2025-03-24
+Rendered from docs/README.rakudoc/README at 22:14 UTC on 2025-09-02
 
-Source last modified at 20:26 UTC on 2025-03-24
+Source last modified at 22:12 UTC on 2025-09-02
 

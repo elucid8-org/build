@@ -11,7 +11,7 @@ Artistic-2.0
 edit-dictionary
 =end code
 The C<--config=.....> argument exists for localised configurations, as for Elucid8-build
-=end SYNPOSIS
+=end SYNOPSIS
 The program is a Cro service that creates a web page on localhost:12345.
 
 =end rakudoc

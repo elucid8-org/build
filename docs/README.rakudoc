@@ -10,12 +10,21 @@ v0.1.0
 =begin SYNOPSIS
 The component is part of the C<Elucid8> distribution and is installed as
 =for code :lang<txt>
-    zef install Elucid8-build
+    zef install Elucid8::Build Elucid8::Run-locally
 
+Elucid8-build needs Dart sass, and Cro.
+
+A minimumal site can be generated in an empty directory with the following steps:
+=numitem elucid8-setup
+=numitem gather-sources
+=numitem elucid8-build
+=numitem run-locally
+=end SYNOPSIS
+=head Introduction
 The utility C<elucid8-build> will generate a static website according
 to the L<configuration|#Configuration> in the Current Working Directory (CWD).
 
-If the CWD is empty, C<elucid8-build install> will create a default structure
+If the CWD is empty, C<elucid8-setup> will create a default structure
 
 If the CWD has a custom (localised) config file, which may be any localised name, and the
 contents have the keys required (in English) but with localised values (eg. Kostom), then
@@ -30,12 +39,12 @@ For the second scenario, the C<gather-sources> utility is used first. See
 L<Gather and Build|Build-Gather.*> for more information.
 
 Once the website has been built, the C<run-locally> utility will serve the HTML files, and
-can be browsed in a browser as C<localhost:3000>. (The port can be changed in the plugins-configuration config).
+can be browsed in a browser as C<localhost:5000>. (The port can be changed in the plugins-configuration config).
 
 Run C<elucid8-build -h> to get information on command line flags.
 
 Subsequent calls to C<elucid8-build> will only rebuild modified source files, but see I<-f> and I<-with-only>
-=end SYNOPSIS
+
 =head Assumptions
 
 The Build component of Elucid8 assumes the following structure.
@@ -44,7 +53,7 @@ The Build component of Elucid8 assumes the following structure.
 sandpit                      # a test bed for a web site built with elucid8
     - config/                 # contains the website configuration
     - misc/                  # contains the dictionaries from the canonical to derived languages
-    - sources/               # Only directories containing language sources permitted here
+    - site-sources/               # Only directories containing language sources permitted here
       - canonical/           # RakuDoc content in canonical language, which is en by default
       - xx/                  # content in language with code xx
       - xx-YY/               # regional content in language with code xx-YY
