@@ -417,7 +417,7 @@ multi sub MAIN(
             %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
     # transfer a favicon if it exists
-    if %config<favicon>.IO ~ :e & :f {
+    if %config<favicon>:exists && %config<favicon>.IO ~ :e & :f {
         %config<favicon>.IO.copy: %config<publication> ~ '/' ~ NAV_DIR ~ '/favicon.ico';
     }
     my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose, :$trace );

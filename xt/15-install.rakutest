@@ -26,10 +26,13 @@ runs_ok(
 );
 subtest 'config directories made' => {
     plan 4;
-    for <config sources Misc sources/en> {
+    for <config site-sources misc site-sources/en> {
         ok .IO ~~ :e & :d, "$_ dir installed"
     }
 }
+&chdir( $cwd );
+empty-directory $dir;
+&chdir( $dir );
 @args.pop;
 @args.push: '--config=qwert';
 runs_ok(
@@ -46,7 +49,7 @@ runs_ok(
 );
 subtest 'custom config directories made' => {
     plan 4;
-    for <qwert sources Misc sources/en> {
+    for <qwert site-sources misc site-sources/en> {
         ok .IO ~~ :e & :d, "$_ dir installed"
     }
 }
