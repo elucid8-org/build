@@ -1,26 +1,26 @@
 =begin rakudoc
+=config code :lang<text>
 =TITLE Build a website from current directory
 =SUBTITLE The Build component for the Elucid8 framework
-=config code :lang<text>
 =for AUTHOR :hidden
 Richard Hainsworth, aka finanalyst
 =for VERSION :hidden
 v0.1.0
-=config code :lang<text>
 =begin SYNOPSIS
 The component is part of the C<Elucid8> distribution and is installed as
-=for code :lang<txt>
+=for code
     zef install Elucid8::Build Elucid8::Run-locally
 
 Elucid8-build needs Dart sass, and Cro.
 
-A minimumal site can be generated in an empty directory with the following steps:
+A minimal site can be generated in an empty directory with the following steps:
 =numitem elucid8-setup
 =numitem gather-sources
 =numitem elucid8-build
 =numitem run-locally
 =end SYNOPSIS
 =head Introduction
+
 The utility C<elucid8-build> will generate a static website according
 to the L<configuration|#Configuration> in the Current Working Directory (CWD).
 
