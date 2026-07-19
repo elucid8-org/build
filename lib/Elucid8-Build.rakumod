@@ -224,13 +224,16 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my Bool $changes = @canon-changes.elems > 0;
         # glue files typically have =ListFiles blocks
         my %listf := $rdp.templates.data<listfiles>;
-        %listf<meta> = $rdp.file-data{$lang};
+        # Do not use .hash after .sort — Hash reordering drops glue sequence, so a later
+        # glue (e.g. index) can render before an earlier one (e.g. troupes/index) and
+        # ListFiles will miss pages that only exist after that earlier glue runs.
         for %!sources{ $lang }.pairs
             .grep({ any( %!glues.keys>>.starts-with( .key ) ) })
-            .sort({ %!glues{ .key } }) # ensures that the order is according to the render order of glues
-            .hash.kv
-            -> $short, %info
+            .sort({ %!glues{ .key } })       # ensures that the order is according to the render order of glues
+            -> (:key($short), :value(%info)) # Avoiding .hash here because it destroys the sort order
             {
+            # Refresh so each glue sees file-data from earlier glues in this pass
+            %listf<meta> = $rdp.file-data{$lang};
             my $rendered-io = (%info<to-path> ~ '.html').IO;
             my $do-file = $!f                        # force flag is set
                         || $changes                  # a lower order glue file has been changed
