@@ -437,10 +437,10 @@ multi sub MAIN(
     # the repo-information file => %sources is built from the main config
     # process the options
     my @nots = ($with-only (-) %config<with-only>).keys;
-    if @nots {
+    with $with-only and +@nots {
         exit note "The following are in the with-only list, but are not in the sources gathered\nConsider changing the list or running elucid8-gather again: ", @nots.join(', ')
     }
-    else {
+    orwith $with-only {
         %config<with-only> = $with-only
     }
     %config<regenerate> = $_ with $regenerate;
