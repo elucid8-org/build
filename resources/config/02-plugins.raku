@@ -16,14 +16,22 @@
         Elucid8::Plugin::HTML::AutoIndex
         Elucid8::Plugin::HTML::SiteMap
     >,
+    # callable in the class will expect arguments as documented here
     setup => (# sequence not hash because order can matter
+    # callable-name ( %config )
+        Favicon => 'move-favicon',
     ),
     pre-file-render => (# sequence not hash because order can matter
+    # callable-name ( $rdp, $lang, $fn, $ast )
     ),
     post-file-render => (# sequence not hash because order can matter
+    # callable-name ( $rdp, $rendered-html )
     ),
     post-all-content-files => (# sequence not hash because order can matter
+    # callable-name ( $rdp, $lang, $to, %config )
     ),
     post-all-files => ( # sequence because order matters
+    # callable-name ( $rdp, %site-config )
+        SiteMap => 'create-site-map',
     )
 )

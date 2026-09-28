@@ -5,6 +5,7 @@ my @modules = <
 Elucid8::Plugin::HTML::UISwitcher
 Elucid8::Plugin::HTML::SiteMap
 Elucid8::Plugin::HTML::AutoIndex
+Elucid8::Plugin::HTML::Favicon
 Elucid8-Build
 >;
 
