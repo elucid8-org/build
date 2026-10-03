@@ -2,7 +2,7 @@ use RakuDoc::Render;
 use RakuDoc::To::HTML;
 use RakuConfig;
 use File::Directory::Tree;
-use PrettyDump;
+use Version::Raku;
 
 constant NAV_DIR is export = 'assets';
 
@@ -10,97 +10,113 @@ class Elucid8::Processor is HTML::Processor {
     has @.pre-process-callables;
     has @.post-process-callables;
     has $!file-data-name;
-    has %.file-data;              #| information about rendered files
-                                  #| made available to all plugins
-                                  #| it is initialise from a file when the build
-                                  #| class is instantiated
-    submethod TWEAK ( :$!file-data-name ) {
+    has %.file-data;
+    #| information about rendered files
+    #| made available to all plugins
+    #| it is initialise from a file when the build
+    #| class is instantiated
+    submethod TWEAK (:$!file-data-name) {
         %!file-data = EVALFILE $!file-data-name if $!file-data-name.IO ~~ :e & :f;
         self.templates.data<file-data> := %!file-data;
     }
     #| a method to initialise plugins before processing begins
     #| each Callable requires the lang and the filename
     #| the website root is immune to pre-processing
-    method pre-process( $lang, $fn, $ast ) {
+    method pre-process($lang, $fn, $ast) {
         return unless $lang;
-        .( self, $lang, $fn, $ast ) for @!pre-process-callables
+        .(self, $lang, $fn, $ast) for @!pre-process-callables
     }
     #| process a file after it has been fully rendered
     #| Not to be confused with post-all-content callables which are called
     #| by language after ALL content files are processed
     #| the website root landing page is immune to post-processing
-    method post-process( $final ) {
+    method post-process($final) {
         %!file-data<current><toc> = self.current.toc.elems ?? self.current.toc.Array !! [];
         %!file-data<current><index> = self.current.index.elems ?? self.current.index !! {};
         # allow for other plugins to affect file-data
         my $rendered = $final;
         for @!post-process-callables {
-            $rendered = .( self, $rendered )
+            $rendered = .(self, $rendered)
         }
-        %!file-data<current>:delete; # discard now
+        %!file-data<current>:delete;
+        # discard now
         $rendered
     }
 }
 
 class Elucid8::Engine is RakuDoc::To::HTML {
-    has $!rdp;              #| RakuDoc Process instance
-    has %!config;           #| to contain the site's config data
-    has $!f;                #| force flag - render all files from scratch
-    has $!src;              #| the source directory
-    has $!to;               #| where rendered files are stored
-    has $!canonical;        #| the canonical human language
-    has %!sources;          #| data about all source files in !src
-    has $!file-data-name;   #| name where file data is stored
-    has $!landing-page;     #| name of file(s) served when only route is visible
-    has $!landing-source;   #| content of route landing file to over-ride auto
-    has @!derived-langs;    #| list of languages in !src other than canonical
-    has @!withs;            #| files to be rendered when restricted
-    has %!glues;            #| glue files and their order
-    has @!post-all-content-files; #| callables that operate after all content files have been processed
-    has @!post-all-files;   #| callables that operate after all content & glue files have been processed
-    has Bool $!trace = False; #| Only output 'say' when $!trace = True
+    has $!rdp;
+    #| RakuDoc Process instance
+    has %!config;
+    #| to contain the site's config data
+    has $!src;
+    #| the source directory
+    has $!to;
+    #| where rendered files are stored
+    has $!canonical;
+    #| the canonical human language
+    has %!sources;
+    #| data about all source files in !src
+    has $!file-data-name;
+    #| name where file data is stored
+    has $!landing-page;
+    #| name of file(s) served when only route is visible
+    has $!landing-source;
+    #| content of route landing file to over-ride auto
+    has @!derived-langs;
+    #| list of languages in !src other than canonical
+    has @!withs;
+    #| files to be rendered when restricted
+    has %!glues;
+    #| glue files and their order
+    has @!post-all-content-files;
+    #| callables that operate after all content files have been processed
+    has @!post-all-files;
+    #| callables that operate after all content & glue files have been processed
 
-    submethod TWEAK( :%!config, :$!f, :$debug, :$verbose, :$trace ) {
+    submethod TWEAK(:%!config, :$debug, :$verbose) {
         $!src = %!config<sources>;
         $!to = %!config<publication>;
         $!canonical = %!config<canonical>;
         $!file-data-name = %!config<misc> ~ '/' ~ %!config<file-data-name>;
         $!landing-page = %!config<landing-page>;
         $!rdp = Elucid8::Processor.new(:output-format<html>, :$!file-data-name);
-        $!rdp.debug( $debug ) if $debug;
-        $!rdp.verbose( $verbose ) with $verbose;
-        $!rdp.add-templates( RakuDoc::To::HTML.new.html-templates, :source<RakuDoc::To::HTML>);
-        $!rdp.add-plugins( %!config<plugins>.list );
+        $!rdp.debug($debug) if $debug;
+        $!rdp.verbose($verbose) with $verbose;
+        $!rdp.add-templates(self.html-templates, :source<RakuDoc::To::HTML>);
+        $!rdp.add-data('css', self.vanilla-css);
+        $!rdp.add-plugins(%!config<plugins>.list);
         # for each plugin, check whether plugin-options are defined in the site config for the plugin
         # add them to the plugin's work-space, over-writing default ones
         my %d := $!rdp.templates.data;
         for %d.keys -> $wkspc {
             next unless %!config<plugin-options>{$wkspc}:exists;
-            for %!config<plugin-options>{$wkspc}.kv { %d{$wkspc}{ $^a } = $^b }
+            for %!config<plugin-options>{$wkspc}.kv { %d{$wkspc}{$^a} = $^b }
         }
         # run callables for setup milestone - after all plugin enables, and using plugin-options
-        for %!config<setup>.list -> ( :key($wkspc), :value($callable) ) {
+        say 'Starting setup stage' unless %!config<quiet>;
+        for %!config<setup>.list -> (:key($wkspc), :value($callable)) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
                 unless %d{$wkspc}{$callable} ~~ Callable;
             %d{$wkspc}{$callable}.(%!config)
         }
         # callables for each milestone
-        for %!config<pre-file-render>.list -> ( :key($wkspc), :value($callable) ) {
+        for %!config<pre-file-render>.list -> (:key($wkspc), :value($callable)) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
-                unless %d{$wkspc}{$callable} ~~ Callable;
+            unless %d{$wkspc}{$callable} ~~ Callable;
             $!rdp.pre-process-callables.push: %d{$wkspc}{$callable}
         }
-        for %!config<post-file-render>.list -> ( :key($wkspc), :value($callable) ) {
+        for %!config<post-file-render>.list -> (:key($wkspc), :value($callable)) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
-                unless %d{$wkspc}{$callable} ~~ Callable;
+            unless %d{$wkspc}{$callable} ~~ Callable;
             $!rdp.post-process-callables.push: %d{$wkspc}{$callable}
         }
-        for %!config<post-all-content-files>.list -> ( :key($wkspc), :value($callable) ) {
+        for %!config<post-all-content-files>.list -> (:key($wkspc), :value($callable)) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
-                unless %d{$wkspc}{$callable} ~~ Callable;
+            unless %d{$wkspc}{$callable} ~~ Callable;
             @!post-all-content-files.push: %d{$wkspc}{$callable};
         }
-        for %!config<post-all-files>.list -> ( :key($wkspc), :value($callable) ) {
+        for %!config<post-all-files>.list -> (:key($wkspc), :value($callable)) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
             unless %d{$wkspc}{$callable} ~~ Callable;
             @!post-all-files.push: %d{$wkspc}{$callable};
@@ -109,37 +125,37 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         # run the scss to css conversion after all plugins have been enabled
         # makes SCSS position independent
         if %d<SCSS>:exists {
-            %d<SCSS><run-sass>.( $!rdp )
+            %d<SCSS><run-sass>.($!rdp)
         }
-        else { $!rdp.gather-flatten( 'css', :@reserved) }
-        %d<UISwitcher><gather-ui-tokens>.( $!rdp, %!config );
-        %d<UISwitcher><add-languages>.( %!config );
-        $!rdp.gather-flatten(<css-link js-link js js-module>, :@reserved );
+        else { $!rdp.gather-flatten('css', :@reserved) }
+        %d<UISwitcher><gather-ui-tokens>.($!rdp, %!config);
+        %d<UISwitcher><add-languages>.(%!config);
+        $!rdp.gather-flatten(<css-link js-link js js-module>, :@reserved);
     }
 
     method process-all {
-        my $repo-url = "{%!config<misc>}/{%!config<repository-info-file>}";
+        my $repo-url = "{ %!config<misc> }/{ %!config<repository-info-file> }";
         if $repo-url.IO ~~ :e & :f {
             %!sources = EVALFILE $repo-url;
             @!derived-langs = %!sources.keys.grep({ $_ ne $!canonical });
             # eval DateTime
             use MONKEY;
-            %!sources.duckmap( -> %a where *.<modified>.isa(Str) {
-                %a<modified> = EVAL( %a<modified> )
-            } );
+            %!sources.duckmap(-> %a where *.<modified>.isa(Str) {
+                %a<modified> = EVAL(%a<modified>)
+            });
         }
         else {
             my @todo = $!src.IO.dir
                     .map({
                         # only save the over-riding landing page source
-                        if .f && (.Str eq ( $!landing-page ~ '.rakudoc')) { $!landing-source = .slurp };
+                        if .f && (.Str eq ($!landing-page ~ '.rakudoc')) { $!landing-source = .slurp };
                         $_
                     })
-                    .grep( *.d );
+                    .grep(*.d);
             # directories under sources must contain language content
-            @!derived-langs = @todo.map( *.relative($!src) );
-            exit note "No directory found corresponding to ｢$!canonical｣" unless
-            $!canonical (elem) @!derived-langs;
+            @!derived-langs = @todo.map(*.relative($!src));
+            exit note "No directory found corresponding to ｢$!canonical｣"
+                unless $!canonical (elem) @!derived-langs;
             @!derived-langs .= grep({ $_ ne $!canonical });
             while @todo {
                 for @todo.pop.dir -> $path {
@@ -166,58 +182,60 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method render-files {
-        @!withs = %!config<with-only>.comb( / \S+ /);
+        @!withs = %!config<with-only>.comb(/ \S+ /);
         %!glues = %!config<glues>;
         my @canon-changes;
-        my $content-changed = self.render-contents( $!canonical, @canon-changes, :canon );
+        my $content-changed = self.render-contents($!canonical, @canon-changes, :canon);
+        say 'Starting post file-render stage for content sources' unless %!config<quiet>;
         if $content-changed {
-            .( $!rdp, $!canonical, $!to, %!config ) for @!post-all-content-files;
+            .($!rdp, $!canonical, $!to, %!config) for @!post-all-content-files;
         }
+        say 'Starting rendering glue sources' unless %!config<quiet>;
         # this order is needed to trap changes in glues source with no change in content
         # first force function to run, then conserve what was in content change if True
-        $content-changed = self.render-glues( $!canonical, @canon-changes, :canon )
-            || $content-changed;
+        $content-changed = self.render-glues($!canonical, @canon-changes, :canon)
+                || $content-changed;
         for @!derived-langs -> $dl {
-            $content-changed = self.render-contents( $dl, @canon-changes )
-                || $content-changed;
+            $content-changed = self.render-contents($dl, @canon-changes)
+                    || $content-changed;
             if $content-changed {
-                .( $!rdp, $dl, $!to, %!config ) for @!post-all-content-files
+                .($!rdp, $dl, $!to, %!config) for @!post-all-content-files
             }
-            $content-changed = self.render-glues( $dl, @canon-changes )
-                || $content-changed;
+            $content-changed = self.render-glues($dl, @canon-changes)
+                    || $content-changed;
         }
         if $content-changed {
             self.landing-page;
-            dictionary-store( $!rdp.file-data, $!file-data-name);
-            .( $!rdp, %!config ) for @!post-all-files
+            dictionary-store($!rdp.file-data, $!file-data-name);
+            .($!rdp, %!config) for @!post-all-files
         }
-        else { say 'Nothing has changed' if $!trace }
+        else { say 'Nothing has changed' unless %!config<quiet> }
     }
 
-    method render-contents( $lang, @canon-changes, Bool :$canon = False --> Bool ) {
+    method render-contents($lang, @canon-changes, Bool :$canon = False --> Bool) {
         my $changes = False;
         my @withs := @!withs;
-        for %!sources{ $lang }.pairs
-            .grep({ @withs.elems == 0 or .key ~~ / @withs /})
-            .grep({ none( %!glues.keys>>.starts-with( .key ) ) })
-            .hash.kv
-            -> $short, %info
-            {
+
+        for %!sources{$lang}.pairs
+                .grep({ @withs.elems == 0 or .key ~~ / @withs / })
+                .grep({ none(%!glues.keys>>.starts-with(.key)) })
+                .hash.kv
+        -> $short, %info
+        {
             my $rendered-io = (%info<to-path> ~ '.html').IO;
-            my $do-file = $!f || ($!rdp.file-data{$lang}{$short}:!exists)
-                             || !$rendered-io.f
-                             || %info<modified> > $rendered-io.modified.DateTime
-                             || ( $canon.not and $short (elem) @canon-changes )
-                             ;
+            my $do-file = %!config<force> || ($!rdp.file-data{$lang}{$short}:!exists)
+                    || !$rendered-io.f
+                    || %info<modified> > $rendered-io.modified.DateTime
+                    || ($canon.not and $short (elem) @canon-changes);
             %info<type> = 'primary';
             self.render-file($lang, $short, %info) if $do-file;
-            @canon-changes.push( $short ) if $canon and $do-file;
+            @canon-changes.push($short) if $canon and $do-file;
             $changes ||= $do-file
         }
         $changes
     }
 
-    method render-glues( $lang, @canon-changes, Bool :$canon = False --> Bool ) {
+    method render-glues($lang, @canon-changes, Bool :$canon = False --> Bool) {
         # render all glues if content changed.
         # TODO add dependency logic to only render glues if dependent content changed
         my $rdp := $!rdp;
@@ -227,20 +245,27 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         # Do not use .hash after .sort — Hash reordering drops glue sequence, so a later
         # glue (e.g. index) can render before an earlier one (e.g. troupes/index) and
         # ListFiles will miss pages that only exist after that earlier glue runs.
-        for %!sources{ $lang }.pairs
-            .grep({ any( %!glues.keys>>.starts-with( .key ) ) })
-            .sort({ %!glues{ .key } })       # ensures that the order is according to the render order of glues
-            -> (:key($short), :value(%info)) # Avoiding .hash here because it destroys the sort order
-            {
+        for %!sources{$lang}.pairs
+                .grep({ any(%!glues.keys>>.starts-with(.key)) })
+                .sort({ %!glues{.key} })
+        # ensures that the order is according to the render order of glues
+        -> (:key($short), :value(%info))
+           # Avoiding .hash here because it destroys the sort order
+        {
             # Refresh so each glue sees file-data from earlier glues in this pass
             %listf<meta> = $rdp.file-data{$lang};
             my $rendered-io = (%info<to-path> ~ '.html').IO;
-            my $do-file = $!f                        # force flag is set
-                        || $changes                  # a lower order glue file has been changed
-                        || ($rdp.file-data{$lang}{$short}:!exists) # the file has not be rendered before
-                        || !$rendered-io.f           # the rendered file does not exist
-                        || %info<modified> > $rendered-io.modified.DateTime # rendered file is older than source
-                        ;
+            my $do-file = %!config<force>
+                # force flag is set
+                || $changes
+                # a lower order glue file has been changed
+                || ($rdp.file-data{$lang}{$short}:!exists)
+                # the file has not be rendered before
+                || !$rendered-io.f
+                # the rendered file does not exist
+                || %info<modified> > $rendered-io.modified.DateTime
+                # rendered file is older than source
+                ;
             %info<type> = 'glue';
             self.render-file($lang, $short, %info) if $do-file;
             $changes ||= $do-file
@@ -257,29 +282,29 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         #| then a list of glue files with fields ordered according to the reverse of the
         #| order in the plugins config
         my @glue-files = $rdp.file-data.pairs.grep(
-            *.key.starts-with( $!canonical )
-        ).map({
-            [ .key,
-                %!config<language-list>{ .key },
-                (.value.pairs.grep({ .key eq any( %!glues.keys ) })
-                            .sort({ %!glues{ .key } }).reverse
-                            .map({ ( .value<title subtitle path>:p.Slip, :path( .key ) ).Hash })
-                            ).Array
+                *.key.starts-with($!canonical)
+                ).map({
+            [.key,
+             %!config<language-list>{.key},
+             (.value.pairs.grep({ .key eq any(%!glues.keys) })
+                     .sort({ %!glues{.key} }).reverse
+                     .map({ (.value<title subtitle path>:p.Slip, :path(.key)).Hash })
+             ).Array
             ]
         }).Slip;
         for $rdp.file-data.pairs.grep({ .key ne $!landing-page })
-            .grep({
-                .key.starts-with( $!canonical ).not
-                &&
-                .key.starts-with( '*' ).not
-            }) {
-                @glue-files.push: [ .key,
-                    %!config<language-list>{ .key },
-                    (.value.pairs.grep({ .key eq any( %!glues.keys ) })
-                        .sort({ %!glues{ .key } }).reverse
-                        .map({ ( .value<title subtitle path>:p.Slip, :path( .key ) ).Hash })
-                    ).Array
-                ]
+                .grep({
+                    .key.starts-with($!canonical).not
+                            &&
+                            .key.starts-with('*').not
+                }) {
+            @glue-files.push: [.key,
+                               %!config<language-list>{.key},
+                               (.value.pairs.grep({ .key eq any(%!glues.keys) })
+                                       .sort({ %!glues{.key} }).reverse
+                                       .map({ (.value<title subtitle path>:p.Slip, :path(.key)).Hash })
+                               ).Array
+            ]
         }
         %autof<meta> = @glue-files;
         my $auto-rakudoc = qq:to/AUTO/;
@@ -289,23 +314,25 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         =for AutoIndex :!toc
         =end rakudoc
         AUTO
-        say "rendering website root $!landing-page" if $!trace;
+
+        say "rendering website root $!landing-page" unless %!config<quiet>;
         my Bool $got = $!landing-source.so;
         my $ast = ($got ?? $!landing-source !! $auto-rakudoc).AST;
-        my $path = $got ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916"; # robot face
+        my $path = $got ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916";
+        # robot face
         my $modified = $got ?? $path.IO.modified.DateTime !! now.DateTime;
-        $rdp.pre-process( '*', $!landing-page, $ast );
+        $rdp.pre-process('*', $!landing-page, $ast);
         my $processed = $rdp.render(
-            $ast,
-            :source-data(%(
-                name => $!landing-page,
-                :$modified,
-                :$path,
-                language => $!canonical,
-                home-page => "/$!landing-page",
-        )), :pre-finalised);
+                $ast,
+                :source-data(%(
+                    name => $!landing-page,
+                    :$modified,
+                    :$path,
+                    language => $!canonical,
+                    home-page => "/$!landing-page",
+                )), :pre-finalised);
         "$!to/$!landing-page\.html".IO.spurt($rdp.finalise);
-        $rdp.file-data{'*'}{$!landing-page}{ .key } = .value for %(
+        $rdp.file-data{'*'}{$!landing-page}{.key} = .value for %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
@@ -316,15 +343,15 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method render-file($language, $short, %info) {
-        say "rendering { %info<from-path> } to { %info<to-path> }.html" if $!trace;
+        say "rendering { %info<from-path> } to { %info<to-path> }.html" if %!config<trace> ~~ / << 'render' >> /;
         my $ast = %info<from-path>.IO.slurp.AST;
         my $rdp := $!rdp;
-        my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/" ) ~ $!landing-page;
+        my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/") ~ $!landing-page;
         my %source-data = %info.clone;
         unless $rdp.file-data{$language}{$short}:exists {
             $rdp.file-data{$language}{$short} = %source-data
         }
-        $rdp.pre-process( $language, $short, $ast );
+        $rdp.pre-process($language, $short, $ast);
         %source-data<language> = $language;
         %source-data<home-page> = $home-page;
         %source-data<name> = $short;
@@ -334,9 +361,8 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         $rendered-io.spurt($rdp.finalise);
         my $type = $processed.source-data<rakudoc-config><type>:exists ??
             $processed.source-data<rakudoc-config><type>
-            !! %info<type>
-        ;
-        $rdp.file-data{$language}{$short}{ .key } = .value for %(
+            !! %info<type>;
+        $rdp.file-data{$language}{$short}{.key} = .value for %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
@@ -348,53 +374,53 @@ class Elucid8::Engine is RakuDoc::To::HTML {
 proto sub MAIN(|) is export {*}
 
 multi sub MAIN(
-    :$config = 'config', #= localised config file
-    Bool :install($)!,     #= install a config directory (if absent) from default values
-) {
+        :$config = 'config', #= localised config file
+        Bool :install($)!,     #= install a config directory (if absent) from default values
+               ) {
     my $path = $config.IO.mkdir;
     my $resource;
     my @defaults = <01-base.raku 02-plugins.raku 03-plugin-options.raku 04-repositories.raku>;
     for @defaults {
-        $resource := %?RESOURCES{ "config/$_" };
-        indir $path, {.IO.spurt( $resource.slurp(:close) )}
+        $resource := %?RESOURCES{"config/$_"};
+        indir $path, { .IO.spurt($resource.slurp(:close)) }
     }
     my %options = get-config(:$path);
     # create the necessary directory structure from the config
     $path = %options<site-sources> ~ '/' ~ %options<canonical>;
     mktree $path;
     for <examples.rakudoc index.rakudoc> {
-        $resource := %?RESOURCES{ "minimal/$_" };
-        indir $path, {.IO.spurt( $resource.slurp(:close) )}
+        $resource := %?RESOURCES{"minimal/$_"};
+        indir $path, { .IO.spurt($resource.slurp(:close)) }
     }
-    $path = %options<misc>;;
+    $path = %options<misc>;
     mktree $path;
     for <ui-dictionary.rakuon favicon.ico> {
-        $resource := %?RESOURCES{ $_ };
-#        indir $path, { .IO.spurt( $resource.slurp(:close) ) }
+        $resource := %?RESOURCES{$_};
+        #        indir $path, { .IO.spurt( $resource.slurp(:close) ) }
         $resource.copy: "$path/$_"
     }
 }
 
 multi sub MAIN(
-    Bool :version(:$v)! #= Return version of distribution
-) {
+        Bool :version(:$v)! #= Return version of distribution
+               ) {
     say 'Using version ', $?DISTRIBUTION.meta<version>, ' of elucid8-build distribution.' if $v;
     say 'Rakudoc::Processor version: ', RakuDoc::Processor.^ver
 };
 
 multi sub MAIN(
-    :$config = 'config',      #= localised config file
-    Bool :force(:$f) = False, #= force complete rendering, otherwise only modified
-    Str :$debug = 'None',     #= RakuAST-RakuDoc-Render debug list
-    Str :$verbose = '',       #= RakuAST-RakuDoc-Render verbose parameter
-    Str :$with-only,          #= only render these files, over-rides the config value
-    Bool :$regenerate-from-scratch = True ,
-                              #= delete any previous rendering and file data. Long process
-    Bool :$trace = False,     #= only print intermediate output when True
-) {
+        :$config = 'config',      #= localised config file
+        Bool :force(:$f) = False, #= force rendering of all files, otherwise rerender only modified
+        Str :$debug = 'None',     #= RakuAST-RakuDoc-Render debug list
+        Str :$verbose = '',       #= RakuAST-RakuDoc-Render verbose parameter
+        Str :$with-only,          #= overide config: only render these files, over-rides the config value
+        Bool :$regenerate,        #= overide config: delete any previous rendering and file data. Long process
+        Str :$trace,              #= overide config: list of 'render' and/or plugin names to print debug output
+        Bool :$quiet,             #= overide config: suppress progress info
+               ) {
     my %config;
     if $config.IO ~~ :e & :d {
-        %config = get-config(:path( $config ))
+        %config = get-config(:path($config))
     }
     else {
         if $config eq 'config' {
@@ -404,25 +430,71 @@ multi sub MAIN(
         }
         else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
-    %config<with-only> = $_ with $with-only; # only over-ride if set
-    %config<regenerate-from-scratch> = $_ with $regenerate-from-scratch; # only over-ride if set
-    if %config<regenerate-from-scratch> and "{%config<misc>}/{%config<file-data-name>}".IO.e {
-        say "Rebuilding from scratch. May take a little longer." if $trace;
+    # check to see if the plugins list are installed
+    verify-plugins(%config<plugins>.list);
+    # replace config options with CLI options if they are set
+    # verify that the CLI with-only set is contained in the set in the main config
+    # the repo-information file => %sources is built from the main config
+    # process the options
+    my @nots = ($with-only (-) %config<with-only>).keys;
+    with $with-only and +@nots {
+        exit note "The following are in the with-only list, but are not in the sources gathered\nConsider changing the list or running elucid8-gather again: ", @nots.join(', ')
+    }
+    orwith $with-only {
+        %config<with-only> = $with-only
+    }
+    %config<regenerate> = $_ with $regenerate;
+    %config<trace>      = $_ with $trace;
+    %config<quiet>      = $_ with $quiet;
+    %config<force>      = $f;
+    %config<trace> = '' if %config<quiet>; # in this order a CLI quiet option will override the config trace
+    if %config<regenerate> {
+        say "Rebuilding from scratch. May take a little longer."  unless %config<quiet>;
         my $ok = empty-directory %config<publication>;
-        $ok = "{%config<misc>}/{%config<file-data-name>}".IO.unlink if $ok;
+        $ok = "{ %config<misc> }/{ %config<file-data-name> }".IO.unlink
+            if $ok and "{ %config<misc> }/{ %config<file-data-name> }".IO.e;
         exit note('Could not delete old build output') unless $ok
     }
     # create deprecated url map
     unless (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
-    # create the server-centric files for Caddy & Cro run-locally by default
+        # create the server-centric files for Caddy & Cro run-locally by default
         mktree %config<publication> ~ '/' ~ NAV_DIR;
         (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
-            %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
+                %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
     }
-    # transfer a favicon if it exists
-    if %config<favicon>:exists && %config<favicon> && (%config<favicon>.IO ~ :e & :f) {
-        %config<favicon>.IO.copy: %config<publication> ~ '/' ~ NAV_DIR ~ '/favicon.ico';
-    }
-    my Elucid8::Engine $engine .= new(:%config, :$f, :$debug, :$verbose, :$trace );
+    my Elucid8::Engine $engine .= new(:%config, :$debug, :$verbose);
     $engine.process-all
+}
+
+sub verify-plugins( @plugins ) {
+    my %p-versions;
+    my $nots;
+    my $bads;
+    my @installs;
+    for @plugins -> $p {
+        $p ~~ / (.+?) ':ver<'  (.+)  '>' | (.+) $ /;
+        my $p-base = ~$/[0];
+        %p-versions{$p-base} = ($/[1] // '*').Str;
+        require ::($p-base);
+        CATCH {
+            %p-versions{$p-base}:delete;
+            $nots ~= "$p-base\n\t";
+            @installs.push: $p-base;
+            next
+        }
+    }
+    for %p-versions.kv -> $p-base, $required-v {
+        # so  plugin is installed, verify is high enough
+        require ::($p-base);
+        my $installed-v = ::($p-base).new.config<version>;
+        if  Version::Raku.new($installed-v)."<"(Version::Raku.new($required-v)) {
+            $bads ~= "$p-base is ｢$installed-v｣ needs ｢$required-v｣\n\t";
+            @installs.push: $p-base;
+        }
+    }
+    return unless $bads or $nots;
+    note "Plugin problems detected and will need to be reinstalled";
+    note "The following plugins are not yet installed: \n\t$nots" if $nots;
+    note "The following plugins are installed but are not up to date: \n\t$bads" if $bads;
+    exit note "try: zef install -/precompile-install --force-install . "
 }

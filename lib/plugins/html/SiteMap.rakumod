@@ -15,7 +15,7 @@ method enable( RakuDoc::Processor:D $rdp ) {
     $rdp.add-data( %!config<name-space>, %!config );
 }
 method create-site-map( $rdp, %site-config ) {
-    say "Generating site map";
+    say "Generating site map" unless %site-config<quiet>;
     my %filedata := $rdp.file-data;
     exit note 'Sitemap plugin error. Must set configuration for ｢root-domain｣'
         unless %site-config<plugin-options><SiteMap><root-domain>:exists;
@@ -38,7 +38,6 @@ method create-site-map( $rdp, %site-config ) {
             my $mod = %info<modified>;
             use MONKEY-SEE-NO-EVAL;
             $mod = EVAL $mod if $mod.isa(Str);
-            no MONKEY-SEE-NO-EVAL;
             $mod .= yyyy-mm-dd;
             my $route = %info<route> // $fn;
             $sitemap ~= qq:to/URL/;

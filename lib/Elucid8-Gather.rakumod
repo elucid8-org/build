@@ -62,7 +62,7 @@ multi sub MAIN (
     }
     # Now make available to sources, which should only occur after git operations
     # Linux - sources contains links, Windows TODO (may be empty sources & copy)
-    # Respect main 'with-only' list (can be set in config or on command line)
+    # Respect main 'with-only' list set in config but NOT on command line to GATHER
     # Only transfer with format .rakumod
     # Only transfer ones in repo/lang select list, if exists
     # Do not transfer any in repo/lang ignore list, if exists

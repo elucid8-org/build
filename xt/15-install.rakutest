@@ -30,31 +30,31 @@ subtest 'config directories made' => {
         ok .IO ~~ :e & :d, "$_ dir installed"
     }
 }
-&chdir( $cwd );
-empty-directory $dir;
-&chdir( $dir );
-@args.pop;
-@args.push: '--config=qwert';
-runs_ok(
-    'failure with custom config and no install',
-    :@args,
-    :exitcode(1),
-    :err( / 'Cannot proceed without directory ｢qwert｣.'/ )
-);
-@args.push: '--install';
-runs_ok(
-    'pass with install',
-    :@args,
-    :exitcode(0)
-);
-subtest 'custom config directories made' => {
-    plan 4;
-    for <qwert site-sources misc site-sources/en> {
-        ok .IO ~~ :e & :d, "$_ dir installed"
-    }
-}
+ &chdir( $cwd );
+ empty-directory $dir;
+ &chdir( $dir );
+ @args.pop;
+ @args.push: '--config=qwert';
+ runs_ok(
+     'failure with custom config and no install',
+     :@args,
+     :exitcode(1),
+     :err( / 'Cannot proceed without directory ｢qwert｣.'/ )
+ );
+ @args.push: '--install';
+ runs_ok(
+     'pass with install',
+     :@args,
+     :exitcode(0)
+ );
+ subtest 'custom config directories made' => {
+     plan 4;
+     for <qwert site-sources misc site-sources/en> {
+         ok .IO ~~ :e & :d, "$_ dir installed"
+     }
+ }
 
-&chdir( $cwd );
+ &chdir( $cwd );
 rmtree $dir;
 
 done-testing;

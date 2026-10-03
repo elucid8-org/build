@@ -1,4 +1,5 @@
 use v6.d;
+
 use RakuConfig;
 
 proto sub MAIN(|) is export {*}
