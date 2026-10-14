@@ -31,5 +31,4 @@
                             # it will be server centric
          )
     ),
-    :regenerate,            # regenerate the entire build from scratch
 )

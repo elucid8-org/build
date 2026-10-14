@@ -2,14 +2,16 @@ use v6.d;
 use RakuConfig;
 use File::Directory::Tree;
 use Git::Blame::File;
+use Elucid8-Utilities;
 
-proto sub MAIN ( |c ) is export {*}
+proto sub MAIN is export {*}
 
 multi sub MAIN (
         Bool :version(:$v)! #= provides the version of the distribution
 ) {
     say 'Using version ', $?DISTRIBUTION.meta<version>, ' of elucid8-build distribution.' if $v
 }
+#| creates a new repository dictionary file from git sources
 multi sub MAIN (
         :$config = 'config',      #= localised config file
         :$skip-git = False,       #= skip git pull if offline
@@ -24,32 +26,38 @@ multi sub MAIN (
             If so run ｢{ $*PROGRAM.basename } --config=«installed config directory»｣\
             Or to install run ｢{ $*PROGRAM.basename } --install｣"
         }
-        else { exit note "Cannot proceed without directory ｢$config｣. Try runing ｢{ $*PROGRAM.basename } --config=$config --install｣." }
+        else { exit note "Cannot proceed without directory ｢$config｣. Try running ｢{ $*PROGRAM.basename } --config=$config --install｣." }
     }
     my %repo-info;
+    stage('Gathering sources', :quiet( %config<quiet> ));
+    # final destination of the dictionary file
     my $repo-info-url = "{%config<misc>}/{%config<repository-info-file>}";
-    # Is there a need for %repo-info to be accessed by Gather?
-#    %repo-info = EVALFILE $repo-info-url if $repo-info-url.IO ~~ :e & :f;
+    # root directory for the local repo clones
     my $repo-dir = %config<repository-store>;
-    mktree $repo-dir unless $repo-dir.IO ~~ :e & :d;
-    my $proc;
-    my $repo-full;
+    unless $repo-dir.IO ~~ :e & :d {
+        exit note "No local repos, so cannot use ｢--skip-git｣"
+            if $skip-git;
+        mktree $repo-dir
+    }
     unless $skip-git {
-        # This assumes git & a default to github. If other, then 'clone-statement' needs to be provided
+        my $proc;
+        my $repo-full;
+        # This assumes git is installed.
+        # The default platform is github. If other, then 'clone-statement' needs to be provided
         # First clone / pull repositories
         for %config<repositories>.kv -> $local-repo-name, %info {
             # if %info<repo-name> is self, then the current repo is meant
             next if $local-repo-name eq 'self';
             $repo-full = "$repo-dir/$local-repo-name";
             if $repo-full.IO ~~ :e & :d {
-                say "Pulling $local-repo-name";
+                stage "Pulling $local-repo-name";
                 $proc = run <<git -C $repo-full pull>>, :merge;
                 exit note ( "Could not 'pull' on $local-repo-name (cloned from { %info<repo-name> }). Try with '--skip-git'." ~ $proc
                 .out.slurp(:close))
                 if $proc.exitcode;
             }
             else {
-                say "Cloning $local-repo-name";
+                stage "Cloning $local-repo-name";
                 my $clone-st = %info<clone-statement> //
                 "git clone -q -- https://github.com/{ %info<repo-name> }.git $repo-full";
                 $proc = run $clone-st.split(/' '/), :merge;
@@ -74,6 +82,7 @@ multi sub MAIN (
     }
     my $modified;
     my $to-stem = %config<publication>;
+    stage 'Creating repo data file';
     for %config<repositories>.kv -> $local-repo-name, %repo-config {
         my $repo-stem = "$repo-dir/$local-repo-name/";
         $repo-stem = '' if $local-repo-name eq 'self';
@@ -128,4 +137,5 @@ multi sub MAIN (
         }
     }
     dictionary-store(%repo-info, $repo-info-url );
+    stage 'completion'
 }

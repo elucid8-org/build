@@ -1,5 +1,6 @@
 use v6.d;
 use RakuDoc::Render;
+use Elucid8-Utilities;
 
 unit class Elucid8::Plugin::HTML::SiteMap;
 
@@ -15,7 +16,7 @@ method enable( RakuDoc::Processor:D $rdp ) {
     $rdp.add-data( %!config<name-space>, %!config );
 }
 method create-site-map( $rdp, %site-config ) {
-    say "Generating site map" unless %site-config<quiet>;
+    stage "Generating site map";
     my %filedata := $rdp.file-data;
     exit note 'Sitemap plugin error. Must set configuration for ｢root-domain｣'
         unless %site-config<plugin-options><SiteMap><root-domain>:exists;

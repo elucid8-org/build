@@ -2,9 +2,7 @@ use RakuDoc::Render;
 use RakuDoc::To::HTML;
 use RakuConfig;
 use File::Directory::Tree;
-use Version::Raku;
-
-constant NAV_DIR is export = 'assets';
+use Elucid8-Utilities;
 
 class Elucid8::Processor is HTML::Processor {
     has @.pre-process-callables;
@@ -94,10 +92,10 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             for %!config<plugin-options>{$wkspc}.kv { %d{$wkspc}{$^a} = $^b }
         }
         # run callables for setup milestone - after all plugin enables, and using plugin-options
-        say 'Starting setup stage' unless %!config<quiet>;
+        stage 'Setup stage';
         for %!config<setup>.list -> (:key($wkspc), :value($callable)) {
             exit note "Cannot find a Callable called ｢$callable｣ in ｢$wkspc｣"
-                unless %d{$wkspc}{$callable} ~~ Callable;
+            unless %d{$wkspc}{$callable} ~~ Callable;
             %d{$wkspc}{$callable}.(%!config)
         }
         # callables for each milestone
@@ -155,7 +153,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             # directories under sources must contain language content
             @!derived-langs = @todo.map(*.relative($!src));
             exit note "No directory found corresponding to ｢$!canonical｣"
-                unless $!canonical (elem) @!derived-langs;
+            unless $!canonical (elem) @!derived-langs;
             @!derived-langs .= grep({ $_ ne $!canonical });
             while @todo {
                 for @todo.pop.dir -> $path {
@@ -185,12 +183,13 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         @!withs = %!config<with-only>.comb(/ \S+ /);
         %!glues = %!config<glues>;
         my @canon-changes;
+        stage 'Rendering content files';
         my $content-changed = self.render-contents($!canonical, @canon-changes, :canon);
-        say 'Starting post file-render stage for content sources' unless %!config<quiet>;
+        stage 'Post file-render stage for content sources';
         if $content-changed {
             .($!rdp, $!canonical, $!to, %!config) for @!post-all-content-files;
         }
-        say 'Starting rendering glue sources' unless %!config<quiet>;
+        stage 'Rendering glue sources';
         # this order is needed to trap changes in glues source with no change in content
         # first force function to run, then conserve what was in content change if True
         $content-changed = self.render-glues($!canonical, @canon-changes, :canon)
@@ -256,16 +255,16 @@ class Elucid8::Engine is RakuDoc::To::HTML {
             %listf<meta> = $rdp.file-data{$lang};
             my $rendered-io = (%info<to-path> ~ '.html').IO;
             my $do-file = %!config<force>
-                # force flag is set
-                || $changes
-                # a lower order glue file has been changed
-                || ($rdp.file-data{$lang}{$short}:!exists)
-                # the file has not be rendered before
-                || !$rendered-io.f
-                # the rendered file does not exist
-                || %info<modified> > $rendered-io.modified.DateTime
-                # rendered file is older than source
-                ;
+                    # force flag is set
+                    || $changes
+                    # a lower order glue file has been changed
+                    || ($rdp.file-data{$lang}{$short}:!exists)
+                    # the file has not be rendered before
+                    || !$rendered-io.f
+                    # the rendered file does not exist
+                    || %info<modified> > $rendered-io.modified.DateTime
+            # rendered file is older than source
+                    ;
             %info<type> = 'glue';
             self.render-file($lang, $short, %info) if $do-file;
             $changes ||= $do-file
@@ -315,7 +314,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         =end rakudoc
         AUTO
 
-        say "rendering website root $!landing-page" unless %!config<quiet>;
+        stage "rendering website root $!landing-page";
         my Bool $got = $!landing-source.so;
         my $ast = ($got ?? $!landing-source !! $auto-rakudoc).AST;
         my $path = $got ?? "$!src/$!landing-page\.rakudoc" !! "\x1F916";
@@ -359,8 +358,8 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my $rendered-io = (%info<to-path> ~ '.html').IO;
         with $rendered-io.IO.dirname { mktree $_ unless $_.IO ~~ :e & :d }
         $rendered-io.spurt($rdp.finalise);
-        my $type = $processed.source-data<rakudoc-config><type>:exists ??
-            $processed.source-data<rakudoc-config><type>
+        my $type = $processed.source-data<rakudoc-config><type>:exists
+            ?? $processed.source-data<rakudoc-config><type>
             !! %info<type>;
         $rdp.file-data{$language}{$short}{.key} = .value for %(
             title => $processed.title,
@@ -410,11 +409,9 @@ multi sub MAIN(
 
 multi sub MAIN(
         :$config = 'config',      #= localised config file
-        Bool :force(:$f) = False, #= force rendering of all files, otherwise rerender only modified
         Str :$debug = 'None',     #= RakuAST-RakuDoc-Render debug list
         Str :$verbose = '',       #= RakuAST-RakuDoc-Render verbose parameter
         Str :$with-only,          #= overide config: only render these files, over-rides the config value
-        Bool :$regenerate,        #= overide config: delete any previous rendering and file data. Long process
         Str :$trace,              #= overide config: list of 'render' and/or plugin names to print debug output
         Bool :$quiet,             #= overide config: suppress progress info
                ) {
@@ -438,63 +435,32 @@ multi sub MAIN(
     # process the options
     my @nots = ($with-only (-) %config<with-only>).keys;
     with $with-only and +@nots {
-        exit note "The following are in the with-only list, but are not in the sources gathered\nConsider changing the list or running elucid8-gather again: ", @nots.join(', ')
+        exit note
+                "The following are in the with-only list, but are not in the sources gathered\nConsider changing the list or running elucid8-gather again: ",
+                @nots.join(', ')
     }
     orwith $with-only {
         %config<with-only> = $with-only
     }
-    %config<regenerate> = $_ with $regenerate;
-    %config<trace>      = $_ with $trace;
-    %config<quiet>      = $_ with $quiet;
-    %config<force>      = $f;
-    %config<trace> = '' if %config<quiet>; # in this order a CLI quiet option will override the config trace
-    if %config<regenerate> {
-        say "Rebuilding from scratch. May take a little longer."  unless %config<quiet>;
-        my $ok = empty-directory %config<publication>;
-        $ok = "{ %config<misc> }/{ %config<file-data-name> }".IO.unlink
-            if $ok and "{ %config<misc> }/{ %config<file-data-name> }".IO.e;
-        exit note('Could not delete old build output') unless $ok
+    %config<trace> = $_ with $trace;
+    %config<quiet> = $_ with $quiet;
+    %config<trace> = '' if %config<quiet>;
+    # in this order a CLI quiet option will override the config trace
+    stage("Preparing publication directory", :quiet(%config<quiet>) );
+    if %config<publication>.IO ~~ :e & :d {
+        empty-directory %config<publication>;
+        "{ %config<misc> }/{ %config<file-data-name> }".IO.unlink
+            if "{ %config<misc> }/{ %config<file-data-name> }".IO.e
+    }
+    else {
+        mkdir %config<publication>
     }
     # create deprecated url map
-    unless (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO ~~ :e & :f {
-        # create the server-centric files for Caddy & Cro run-locally by default
-        mktree %config<publication> ~ '/' ~ NAV_DIR;
-        (%config<publication> ~ '/' ~ NAV_DIR ~ '/deprecated-urls').IO.spurt:
-                %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n")
-    }
+    mktree %config<publication> ~ '/assets';
+    (%config<publication> ~ '/assets/deprecated-urls').IO.spurt:
+            %config<deprecated>.pairs.map({ .key.raku ~ ' ' ~ .value.raku }).join("\n");
     my Elucid8::Engine $engine .= new(:%config, :$debug, :$verbose);
-    $engine.process-all
-}
+    $engine.process-all;
 
-sub verify-plugins( @plugins ) {
-    my %p-versions;
-    my $nots;
-    my $bads;
-    my @installs;
-    for @plugins -> $p {
-        $p ~~ / (.+?) ':ver<'  (.+)  '>' | (.+) $ /;
-        my $p-base = ~$/[0];
-        %p-versions{$p-base} = ($/[1] // '*').Str;
-        require ::($p-base);
-        CATCH {
-            %p-versions{$p-base}:delete;
-            $nots ~= "$p-base\n\t";
-            @installs.push: $p-base;
-            next
-        }
-    }
-    for %p-versions.kv -> $p-base, $required-v {
-        # so  plugin is installed, verify is high enough
-        require ::($p-base);
-        my $installed-v = ::($p-base).new.config<version>;
-        if  Version::Raku.new($installed-v)."<"(Version::Raku.new($required-v)) {
-            $bads ~= "$p-base is ｢$installed-v｣ needs ｢$required-v｣\n\t";
-            @installs.push: $p-base;
-        }
-    }
-    return unless $bads or $nots;
-    note "Plugin problems detected and will need to be reinstalled";
-    note "The following plugins are not yet installed: \n\t$nots" if $nots;
-    note "The following plugins are installed but are not up to date: \n\t$bads" if $bads;
-    exit note "try: zef install -/precompile-install --force-install . "
+    stage 'completion'
 }

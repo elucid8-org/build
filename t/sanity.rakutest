@@ -7,6 +7,8 @@ Elucid8::Plugin::HTML::SiteMap
 Elucid8::Plugin::HTML::AutoIndex
 Elucid8::Plugin::HTML::Favicon
 Elucid8-Build
+Elucid8-Gather
+Elucid8-Utilities
 >;
 
 plan @modules.elems;

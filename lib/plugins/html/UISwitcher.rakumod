@@ -4,6 +4,7 @@ use RakuDoc::Render;
 use JSON::Fast;
 use PrettyDump;
 use RakuConfig;
+use Elucid8-Utilities;
 
 unit class Elucid8::Plugin::HTML::UISwitcher;
 has Str $!dictionary = '';
@@ -30,6 +31,7 @@ method add-languages( %config ) {
     %config<language-list> = %!dict.pairs.map({ .key => .value<LangName> }).hash
 }
 method create-dictionary( $rdp, %config ) {
+    stage 'Dictionary creation';
     my %d := $rdp.templates.data;
     my %ui-tokens = %d.pairs
         .grep({ .value ~~ Associative })
