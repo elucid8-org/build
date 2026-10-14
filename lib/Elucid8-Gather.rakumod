@@ -4,7 +4,7 @@ use File::Directory::Tree;
 use Git::Blame::File;
 use Elucid8-Utilities;
 
-proto sub MAIN is export {*}
+proto sub MAIN( | ) is export {*}
 
 multi sub MAIN (
         Bool :version(:$v)! #= provides the version of the distribution
