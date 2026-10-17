@@ -2,13 +2,13 @@ use v6.d;
 use Test;
 
 my @modules = <
+Elucid8-Utilities
 Elucid8::Plugin::HTML::UISwitcher
 Elucid8::Plugin::HTML::SiteMap
 Elucid8::Plugin::HTML::AutoIndex
 Elucid8::Plugin::HTML::Favicon
 Elucid8-Build
 Elucid8-Gather
-Elucid8-Utilities
 >;
 
 plan @modules.elems;
