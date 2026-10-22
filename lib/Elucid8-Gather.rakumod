@@ -117,7 +117,8 @@ multi sub MAIN (
                 # operate on filtered files
                 try { $modified = Git::Blame::File.new($next.Str).modified }
                 if $! {
-                    $modified = now.DateTime
+                    note "Using file system modified time because Git blame failed with $!";
+                    $modified = $next.modified.DateTime
                 }
                 # in Raku documentation key and short may differ
                 my $path = $short;
