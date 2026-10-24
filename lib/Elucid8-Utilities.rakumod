@@ -43,10 +43,11 @@ module Elucid8-Utilities {
         state $time;
         state $last-label;
         state $keep-quiet = $quiet;
+        state $base = INIT now;
         return if $keep-quiet;
         # do not emit any stage information
         if $last-label {
-            say "To $label: +" ~ (now - $time) ~ ' s = ' ~ ($time - INIT now) ~ ' s';
+            fmt('To %s: +%.3f s =  %.3f s', $label, (now - $time),($time - $base)).say;
             $time = now;
             $last-label = $label
         }
@@ -54,7 +55,7 @@ module Elucid8-Utilities {
             # happens when stage first called
             $time = now;
             $last-label = $label;
-            say "Start to $label: " ~ ($time - INIT now) ~ ' s'
+            fmt('Start to %s: %.3f s',$label,($time - $base)).say
         }
     }
 }
