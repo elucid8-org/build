@@ -48,7 +48,7 @@ module Elucid8-Utilities {
         # do not emit any stage information
         my $now = now;
         if $last-label {
-            say sprintf('To %s: +%.3f s =  %.3f s', $label, ($now - $time),($time - $base)) ~ "\r";
+            say sprintf('To %s: +%.3f s =  %.3f s', $label, ($now - $time),($now - $base)) ~ "\r";
             $time = $now;
             $last-label = $label
         }
@@ -56,7 +56,7 @@ module Elucid8-Utilities {
             # happens when stage first called
             $time = $now;
             $last-label = $label;
-            say sprintf('Start to %s: %.3f s\n\r',$label,($time - $base)) ~ "\r"
+            say sprintf('Start to %s: %.3f s',$label,($time - $base)) ~ "\r"
         }
     }
 }
