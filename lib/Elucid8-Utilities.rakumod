@@ -46,16 +46,17 @@ module Elucid8-Utilities {
         state $base = INIT now;
         return if $keep-quiet;
         # do not emit any stage information
+        my $now = now;
         if $last-label {
-            sprintf('To %s: +%.3f s =  %.3f s', $label, (now - $time),($time - $base)).say;
-            $time = now;
+            say sprintf('To %s: +%.3f s =  %.3f s', $label, ($now - $time),($time - $base)) ~ "\r";
+            $time = $now;
             $last-label = $label
         }
         else {
             # happens when stage first called
-            $time = now;
+            $time = $now;
             $last-label = $label;
-            sprintf('Start to %s: %.3f s',$label,($time - $base)).say
+            say sprintf('Start to %s: %.3f s\n\r',$label,($time - $base)) ~ "\r"
         }
     }
 }
