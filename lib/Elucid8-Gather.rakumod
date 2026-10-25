@@ -115,7 +115,7 @@ multi sub MAIN (
                 my $short = $next.relative($from-stem).IO.extension('').Str;
                 next if @withs.elems and $short eq @withs.none;
                 next if @ignores.elems and $short eq @ignores.any;
-                say "｢$repo-stem｣  ｢$short｣\r" if $verbose;
+                note "｢$repo-stem｣  ｢$short｣\r" if $verbose;
                 # operate on filtered files
                 if $repo-stem { # meaning that it is in a transferred repo
                     try { $modified = Git::Blame::File.new($next.Str).modified }
