@@ -13,8 +13,9 @@ multi sub MAIN (
 }
 #| creates a new repository dictionary file from git sources
 multi sub MAIN (
-        :$config = 'config',      #= localised config file
-        :$skip-git = False,       #= skip git pull if offline
+        Str :$config = 'config',       #= localised config file
+        Bool :$skip-git = False,       #= skip git pull if offline
+        Bool :$verbose = False,        #= verbose output, lists all files gathered
                 ) {
     my %config;
     if $config.IO ~~ :e & :d {
@@ -114,6 +115,7 @@ multi sub MAIN (
                 my $short = $next.relative($from-stem).IO.extension('').Str;
                 next if @withs.elems and $short eq @withs.none;
                 next if @ignores.elems and $short eq @ignores.any;
+                say "｢$repo-stem｣  ｢$short｣\r" if $verbose;
                 # operate on filtered files
                 if $repo-stem { # meaning that it is in a transferred repo
                     try { $modified = Git::Blame::File.new($next.Str).modified }
