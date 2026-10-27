@@ -307,12 +307,12 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         }
         %autof<meta> = @glue-files;
         my $auto-rakudoc = qq:to/AUTO/;
-        =begin rakudoc :!toc :!index
-        =TITLE { %!config<landing-title> }
-        =SUBTITLE { %!config<landing-subtitle> }
-        =for AutoIndex :!toc
-        =end rakudoc
-        AUTO
+            =begin rakudoc :!toc :!index
+            =TITLE { %!config<landing-title> }
+            =SUBTITLE { %!config<landing-subtitle> }
+            =for AutoIndex :!toc
+            =end rakudoc
+            AUTO
 
         stage "rendering website root $!landing-page";
         my Bool $got = $!landing-source.so;
@@ -343,11 +343,16 @@ class Elucid8::Engine is RakuDoc::To::HTML {
 
     method render-file($language, $short, %info) {
         say "rendering { %info<from-path> } to { %info<to-path> }.html/r" if %!config<trace> ~~ / << 'render' >> /;
-        my $ast = %info<from-path>.IO.slurp.AST;
+        my $ast;
+        try { $ast = %info<from-path>.IO.slurp.AST }
+        if $! {
+            say "Skipping { %info<from-path> } because it fails on compilation, with error: { .message }";
+            return
+        }
         my $rdp := $!rdp;
-        my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/") ~ $!landing-page;
+        my $home-page = ($short.ends-with($!landing-page) ?? '/' !! " / $language / ") ~ $!landing-page;
         my %source-data = %info.clone;
-        unless $rdp.file-data{$language}{$short}:exists {
+        unless $rdp.file-data{ $language }{ $short }:exists {
             $rdp.file-data{$language}{$short} = %source-data
         }
         $rdp.pre-process($language, $short, $ast);
@@ -359,9 +364,9 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         with $rendered-io.IO.dirname { mktree $_ unless $_.IO ~~ :e & :d }
         $rendered-io.spurt($rdp.finalise);
         my $type = $processed.source-data<rakudoc-config><type>:exists
-            ?? $processed.source-data<rakudoc-config><type>
-            !! %info<type>;
-        $rdp.file-data{$language}{$short}{.key} = .value for %(
+                ?? $processed.source-data<rakudoc-config><type>
+                !! %info<type>;
+        $rdp.file-data{ $language }{ $short }{ .key } = .value for %(
             title => $processed.title,
             subtitle => $processed.subtitle ?? $processed.subtitle !! '',
             config => $processed.source-data<rakudoc-config>,
@@ -370,7 +375,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 }
 
-proto sub MAIN(|) is export {*}
+proto sub MAIN(|) is export { * }
 
 multi sub MAIN(
         :$config = 'config', #= localised config file
@@ -433,7 +438,7 @@ multi sub MAIN(
     # verify that the CLI with-only set is contained in the set in the main config
     # the repo-information file => %sources is built from the main config
     # process the options
-    my @nots = ($with-only (-) %config<with-only>).keys;
+    my @nots = %config<with-only>.elems ?? ($with-only (-) %config<with-only>).keys !! ();
     with $with-only and +@nots {
         exit note
                 "The following are in the with-only list, but are not in the sources gathered\nConsider changing the list or running elucid8-gather again: ",
@@ -446,11 +451,11 @@ multi sub MAIN(
     %config<quiet> = $_ with $quiet;
     %config<trace> = '' if %config<quiet>;
     # in this order a CLI quiet option will override the config trace
-    stage("Preparing publication directory", :quiet(%config<quiet>) );
+    stage("Preparing publication directory", :quiet(%config<quiet>));
     if %config<publication>.IO ~~ :e & :d {
         empty-directory %config<publication>;
         "{ %config<misc> }/{ %config<file-data-name> }".IO.unlink
-            if "{ %config<misc> }/{ %config<file-data-name> }".IO.e
+        if "{ %config<misc> }/{ %config<file-data-name> }".IO.e
     }
     else {
         mkdir %config<publication>
