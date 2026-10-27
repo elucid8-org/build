@@ -34,7 +34,7 @@ module Elucid8-Utilities {
         note "Plugin problems detected and will need to be reinstalled";
         note "The following plugins are not yet installed: \n\t$nots" if $nots;
         note "The following plugins are installed but are not up to date: \n\t$bads" if $bads;
-        exit note "try: zef install -/precompile-install --force-install . "
+        note "Before elucid8-build, try: zef install -/precompile-install --force-install . "
     }
 
     #| given a label, output the label and the time since the last label, and program start
