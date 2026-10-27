@@ -342,7 +342,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method render-file($language, $short, %info) {
-        say "rendering { %info<from-path> } to { %info<to-path> }.html" if %!config<trace> ~~ / << 'render' >> /;
+        say "rendering { %info<from-path> } to { %info<to-path> }.html/r" if %!config<trace> ~~ / << 'render' >> /;
         my $ast = %info<from-path>.IO.slurp.AST;
         my $rdp := $!rdp;
         my $home-page = ($short.ends-with($!landing-page) ?? '/' !! "/$language/") ~ $!landing-page;
