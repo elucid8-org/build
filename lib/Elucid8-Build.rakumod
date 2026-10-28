@@ -416,7 +416,7 @@ multi sub MAIN(
         :$config = 'config',      #= localised config file
         Str :$debug = 'None',     #= RakuAST-RakuDoc-Render debug list
         Str :$verbose = '',       #= RakuAST-RakuDoc-Render verbose parameter
-        Str :$with-only,          #= overide config: only render these files, over-rides the config value
+        Str :$with-only = '',     #= overide config: only render these files, over-rides the config value
         Str :$trace,              #= overide config: list of 'render' and/or plugin names to print debug output
         Bool :$quiet,             #= overide config: suppress progress info
                ) {
@@ -439,12 +439,12 @@ multi sub MAIN(
     # the repo-information file => %sources is built from the main config
     # process the options
     my @nots = %config<with-only>.elems ?? ($with-only (-) %config<with-only>).keys !! ();
-    with $with-only and +@nots {
+    if $with-only and +@nots {
         exit note
                 "The following are in the with-only list, but are not in the sources gathered\nConsider changing the list or running elucid8-gather again: ",
                 @nots.join(', ')
     }
-    orwith $with-only {
+    elsif $with-only {
         %config<with-only> = $with-only
     }
     %config<trace> = $_ with $trace;
