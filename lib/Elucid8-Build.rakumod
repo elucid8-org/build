@@ -346,7 +346,7 @@ class Elucid8::Engine is RakuDoc::To::HTML {
         my $ast;
         try { $ast = %info<from-path>.IO.slurp.AST }
         if $! {
-            say "Skipping { %info<from-path> } because it fails on compilation, with error: { .message }";
+            say "Skipping { %info<from-path> } because it fails on compilation, with error: $!";
             return
         }
         my $rdp := $!rdp;
