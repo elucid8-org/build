@@ -342,11 +342,11 @@ class Elucid8::Engine is RakuDoc::To::HTML {
     }
 
     method render-file($language, $short, %info) {
-        say "rendering { %info<from-path> } to { %info<to-path> }.html/r" if %!config<trace> ~~ / << 'render' >> /;
+        say "rendering { %info<from-path> } to { %info<to-path> }.html\r" if %!config<trace> ~~ / << 'render' >> /;
         my $ast;
         try { $ast = %info<from-path>.IO.slurp.AST }
         if $! {
-            say "Skipping { %info<from-path> } because it fails on compilation, with error: $!";
+            say "SKIPPING { %info<from-path> } because it fails on compilation, with error: $!";
             return
         }
         my $rdp := $!rdp;
