@@ -92,7 +92,7 @@ multi sub MAIN (
             %repo-info{$lang} = %() unless %repo-info{$lang}:exists;
             my %update := %repo-info{$lang}.hash;
             my $rep-entry = %lang-info<source-entry>:exists ?? (%lang-info<source-entry>) !! '';
-            my $repo-entry-stem = %lang-info<edit-path>:exists ?? (%leng-info<edit-path> ~ '/') !! '';
+            my $repo-edit-stem = %lang-info<edit-path>:exists ?? (%lang-info<edit-path> ~ '/') !! '';
             my $from-stem = $repo-stem ~ $rep-entry;
             my $to = "$to-stem/$lang";
             $to ~= "/$_" with %lang-info<destination>;
